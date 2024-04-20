@@ -13,7 +13,7 @@
         >
 
         <bitmap
-            android:src="@mipmap/ic_launcher_foreground"
+            android:src="@mipmap/launcher"
             android:gravity="center"
 
             />
