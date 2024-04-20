@@ -1,0 +1,21 @@
+<resources>
+    <string name="app_name">assgn4</string>
+    <string name="action_settings">Settings</string>
+    <!-- Strings used for fragments for navigation -->
+    <string name="first_fragment_label">First Fragment</string>
+    <string name="second_fragment_label">Second Fragment</string>
+    <string name="next">Next</string>
+    <string name="previous">Previous</string>
+
+    <string name="lorem_ipsum">
+        Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nam in scelerisque sem.
+    </string>
+    <string name="Stocks">Stocks</string>
+    <string name="c_date">1 May 2024</string>
+    <string name="portfolio">PORTFOLIO</string>
+    <string name="favorites">FAVORITES</string>
+
+
+    <string name="finnhub">powered by finnhub</string>
+    <string name="stockSearch">stockSearch</string>
+</resources>
