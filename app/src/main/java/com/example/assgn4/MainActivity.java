@@ -310,33 +310,26 @@ public class MainActivity extends AppCompatActivity {
                                         (Math.round(dp * 100.0) / 100.0)
                                 );
                                 portfolioItems.add(item);
+                                netWorthContainer[0] += (qty*c);
+
+                                Log.d("networth", String.valueOf(netWorthContainer[0]));
                                 Log.d("PortfolioItem", item.toString());
                                 if (portfolioItems.size() == response.length()) {
                                     // All items have been processed, update UI here
-                                    updateUI(portfolioItems);
+                                    updateUI(portfolioItems, netWorthContainer[0]);
                                 }
                             });
 
 
 
 
-                            netWorthContainer[0] += portfolioObject.getDouble("total_cost");
+
 
                             Log.d("portfolioobject", String.valueOf(portfolioObject));
 
                         }
 
 
-                        Log.d("networth", String.valueOf(netWorthContainer[0]));
-
-
-
-                        double finalNetWorth = netWorthContainer[0] + balance;
-                        Log.d("here", String.valueOf(netWorthContainer[0]));
-                        Log.d("here", String.valueOf(balance));
-
-                        TextView NetWorth = findViewById(R.id.networth);
-                        NetWorth.setText(String.format(Locale.getDefault(), "Net Worth: $%.2f", finalNetWorth));
 
                         Log.d("PortfolioResponse", portfolioItems.toString());
                     } catch (Exception e) {
@@ -392,7 +385,14 @@ public class MainActivity extends AppCompatActivity {
 
 
 
-    private void updateUI(ArrayList<PortfolioItem> portfolioItems) {
+    private void updateUI(ArrayList<PortfolioItem> portfolioItems, double netWorth) {
+
+        double finalNetWorth = netWorth + balance;
+        Log.d("here", String.valueOf(netWorth));
+        Log.d("here", String.valueOf(balance));
+
+        TextView NetWorth = findViewById(R.id.networth);
+        NetWorth.setText(String.format(Locale.getDefault(), "$%.2f", finalNetWorth));
         RecyclerView recyclerView = findViewById(R.id.recyclerView);
         PortfolioAdapter p_adapter = new PortfolioAdapter(portfolioItems);
         recyclerView.setAdapter(p_adapter);
