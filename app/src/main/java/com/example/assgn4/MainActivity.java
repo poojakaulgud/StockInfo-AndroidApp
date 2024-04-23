@@ -1,6 +1,10 @@
 package com.example.assgn4;
 
 import android.content.Intent;
+import android.graphics.Canvas;
+import android.graphics.Color;
+import android.graphics.Paint;
+import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.Bundle;
 
@@ -10,15 +14,18 @@ import com.android.volley.toolbox.JsonObjectRequest;
 
 import androidx.appcompat.app.AppCompatActivity;
 import com.android.volley.RequestQueue;
+import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
 
 
 import android.util.Log;
 
+import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import android.view.View;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -31,6 +38,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
+import java.util.Objects;
 import java.util.concurrent.atomic.AtomicReference;
 
 public class MainActivity extends AppCompatActivity {
@@ -62,6 +70,7 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onCompleted() {
                 getPortfolio();
+                getFavorites();
             }
         });
 
@@ -88,6 +97,187 @@ public class MainActivity extends AppCompatActivity {
 
 
 
+    }
+
+
+    private void getFavorites(){
+        String url = BASE_URL + "/watchlist";
+        JsonArrayRequest jsonArrayRequest = new JsonArrayRequest(Request.Method.GET, url, null,
+                response -> {
+                    try {
+                        ArrayList<FavoriteItem> favoriteItems = new ArrayList<>();
+                        final double[] netWorthContainer = new double[1];
+
+                        for (int i = 0; i < response.length(); i++) {
+                            JSONObject favoriteObject = response.getJSONObject(i);
+                            String ticker = favoriteObject.getString("ticker");
+                            String desc = favoriteObject.getString("description");
+
+                            Log.d("JSONParsing", "Ticker: " + ticker + ", Desc: " + desc );
+                            getCostValues(ticker, (receivedTicker, c, d, dp) -> {
+                                Log.d("cvaluesblahblah", String.valueOf(c));
+                                FavoriteItem item = new FavoriteItem(
+                                        ticker,
+                                        desc,
+                                        (Math.round(c * 100.0) / 100.0),
+                                        (Math.round(d * 100.0) / 100.0),
+                                        (Math.round(dp * 100.0) / 100.0)
+                                );
+                                favoriteItems.add(item);
+                                Log.d("FavoriteItem", item.toString());
+                                if (favoriteItems.size() == response.length()) {
+                                    // All items have been processed, update UI here
+                                    updateFavoriteUI(favoriteItems);
+                                }
+                            });
+
+
+
+
+                        }
+
+
+                        Log.d("FavoriteResponse", favoriteItems.toString());
+                    } catch (Exception e) {
+                        throw new RuntimeException(e);
+                    }
+
+                },
+                error -> {
+                    Log.e("getFavorite", "Error: " + error.toString());
+                });
+        requestQueue.add(jsonArrayRequest);
+    }
+
+
+    private void updateFavoriteUI(ArrayList<FavoriteItem> favoriteItems) {
+        RecyclerView recyclerView = findViewById(R.id.favoritesRecyclerView);
+        FavoritesAdapter f_adapter = new FavoritesAdapter(favoriteItems);
+        recyclerView.setAdapter(f_adapter);
+        recyclerView.setLayoutManager(new LinearLayoutManager(this));
+        setupFavoriteTouchHelper(recyclerView, favoriteItems, f_adapter);
+
+    }
+
+
+    private void setupFavoriteTouchHelper(RecyclerView recyclerView, ArrayList<FavoriteItem> favoriteItems, FavoritesAdapter f_adapter) {
+        ItemTouchHelper.SimpleCallback simpleItemTouchCallback = new ItemTouchHelper.SimpleCallback(ItemTouchHelper.UP | ItemTouchHelper.DOWN, ItemTouchHelper.LEFT) {
+
+            @Override
+            public boolean onMove(RecyclerView recyclerView, RecyclerView.ViewHolder viewHolder, RecyclerView.ViewHolder target) {
+                final int fromPosition = viewHolder.getAbsoluteAdapterPosition();
+                final int toPosition = target.getAbsoluteAdapterPosition();
+
+                // If specific position checks are needed, implement them here
+                // For now, allow moving within any positions
+
+                Collections.swap(favoriteItems, fromPosition, toPosition);
+                f_adapter.notifyItemMoved(fromPosition, toPosition);
+                return true;
+            }
+
+            @Override
+            public void onSwiped(RecyclerView.ViewHolder viewHolder, int swipeDir) {
+                int position = viewHolder.getAbsoluteAdapterPosition();
+                FavoriteItem swipedItem = ((FavoritesAdapter) Objects.requireNonNull(recyclerView.getAdapter())).favoriteItems.get(position);
+                String ticker = swipedItem.getTicker(); // Assuming MyObject has a getTicker method
+
+                // Log or use the Ticker as needed
+                Log.d("SWIPED ITEM TICKER", "Ticker: " + ticker);
+
+                deleteFavoritesItem(position, ticker);
+            }
+
+            public void deleteFavoritesItem(int position, String ticker) {
+                Log.d("INDELETE", ticker);
+                String url = BASE_URL + "/watchlist/" + ticker ;
+                StringRequest deleteRequest = new StringRequest(Request.Method.DELETE, url,
+                        response -> {
+                            try{
+                            Log.d("DELETE", response);
+                                if (position >= 0 && position < favoriteItems.size()) {
+                                    favoriteItems.remove(position); // Remove the item from the list
+                                    updateFavoriteUI(favoriteItems);
+                                }
+                            }catch (Exception e){
+                                Log.e("DELETE ERROR", String.valueOf(e));
+                            }
+                        },
+                        error -> {
+                            // Handle error here
+                            if (error.networkResponse != null && error.networkResponse.statusCode == 404) {
+                                Log.e("DELETE", "Document with the specified ticker not found");
+                            } else {
+                                Log.e("DELETE", "Error occurred: " + error.toString());
+                            }
+                        }
+                );
+                requestQueue.add(deleteRequest);
+
+            }
+
+
+            @Override
+            public void onSelectedChanged(RecyclerView.ViewHolder viewHolder, int actionState) {
+                super.onSelectedChanged(viewHolder, actionState);
+                if (actionState != ItemTouchHelper.ACTION_STATE_IDLE) {
+                    viewHolder.itemView.setAlpha(0.5f); // Change alpha to indicate dragging
+                }
+            }
+
+            @Override
+            public void clearView(RecyclerView recyclerView, RecyclerView.ViewHolder viewHolder) {
+                super.clearView(recyclerView, viewHolder);
+                viewHolder.itemView.setAlpha(1.0f); // Restore alpha after moving
+            }
+
+            @Override
+            public void onChildDraw(Canvas c, RecyclerView recyclerView, RecyclerView.ViewHolder viewHolder,
+                                    float dX, float dY, int actionState, boolean isCurrentlyActive) {
+
+                View itemView = viewHolder.itemView;
+                if (actionState == ItemTouchHelper.ACTION_STATE_SWIPE) {
+                    Paint paint = new Paint();
+                    Drawable icon = ContextCompat.getDrawable(recyclerView.getContext(), R.drawable.delete); // Your dustbin icon
+
+                    if (dX < 0 && isCurrentlyActive) { // Left swipe action and the swipe is active
+                        // Set your red color paint
+                        paint.setColor(Color.RED);
+
+                        // Draw the red background
+                        c.drawRect((float) itemView.getRight() + dX, (float) itemView.getTop(),
+                                (float) itemView.getRight(), (float) itemView.getBottom(), paint);
+
+                        // Calculate position for the dustbin icon
+                        int iconMargin = (itemView.getHeight() - icon.getIntrinsicHeight()) / 2;
+                        int iconTop = itemView.getTop() + iconMargin;
+                        int iconBottom = iconTop + icon.getIntrinsicHeight();
+                        int iconLeft = itemView.getRight() - iconMargin - icon.getIntrinsicWidth();
+                        int iconRight = itemView.getRight() - iconMargin;
+
+                        // Set bounds and draw the dustbin icon
+                        icon.setBounds(iconLeft, iconTop, iconRight, iconBottom);
+                        icon.draw(c);
+                    }
+
+                    // Clear any overdraw by the default ItemTouchHelper's onChildDraw method by passing in isCurrentlyActive
+                    final float alpha = 1.0f - Math.abs(dX) / (float) itemView.getWidth();
+                    itemView.setAlpha(alpha);
+                    itemView.setTranslationX(dX);
+                } else {
+                    // Reset View to its original state if the swipe is not active
+                    itemView.setAlpha(1.0f);
+                    itemView.setTranslationX(0);
+                }
+
+                super.onChildDraw(c, recyclerView, viewHolder, dX, dY, actionState, isCurrentlyActive);
+            }
+
+
+        };
+
+        ItemTouchHelper itemTouchHelper = new ItemTouchHelper(simpleItemTouchCallback);
+        itemTouchHelper.attachToRecyclerView(recyclerView);
     }
 
 
