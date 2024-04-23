@@ -70,7 +70,7 @@
         android:id="@+id/pf_textView"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="#B5A9A9"
+        android:background="@android:color/darker_gray"
         android:paddingHorizontal="10dp"
         android:paddingVertical="7dp"
         android:text="@string/portfolio"
@@ -116,6 +116,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:layout_marginEnd="0dp"
                 android:text="Cash Balance"
                 android:textAppearance="?android:attr/textAppearanceMedium" />
 
@@ -127,6 +128,11 @@
                 android:textStyle="bold" />
         </LinearLayout>
     </LinearLayout>
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/recyclerView"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
 
     <TextView
         android:id="@+id/textView"

@@ -4,41 +4,48 @@ import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
 
-import com.google.android.material.snackbar.Snackbar;
+import com.android.volley.Request;
+import com.android.volley.toolbox.JsonArrayRequest;
+import com.android.volley.toolbox.JsonObjectRequest;
 
 import androidx.appcompat.app.AppCompatActivity;
+import com.android.volley.RequestQueue;
+import com.android.volley.toolbox.Volley;
 
-import android.view.View;
 
-import androidx.navigation.NavController;
-import androidx.navigation.Navigation;
-import androidx.navigation.ui.AppBarConfiguration;
-import androidx.navigation.ui.NavigationUI;
+import android.util.Log;
+
+import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.example.assgn4.databinding.ActivityMainBinding;
-
-import android.view.Menu;
-import android.view.MenuItem;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import java.text.DateFormat;
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import java.util.ArrayList;
-import java.util.Date;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
+import java.util.Locale;
+import java.util.concurrent.atomic.AtomicReference;
 
 public class MainActivity extends AppCompatActivity {
 
     private RecyclerView stocksRecyclerView;
     private StockAdapter stocksAdapter;
     private List<Stock> stockItems; // Your data
+    private RequestQueue requestQueue;
+    private double balance;
+    private final String BASE_URL = "https://assgn3-pooja.wl.r.appspot.com";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         setTheme(R.style.Base_Theme_Assgn4);
+
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
@@ -46,14 +53,21 @@ public class MainActivity extends AppCompatActivity {
         ImageView searchIcon = findViewById(R.id.searchIcon);
         TextView dateTextView = findViewById(R.id.dateTextView);
         TextView netWorthTextView = findViewById(R.id.networth);
-        TextView cashBalanceTextView = findViewById(R.id.Balance);
+
         TextView poweredByLabel = findViewById(R.id.poweredByLabel);
+        requestQueue = Volley.newRequestQueue(this);
+
+        // Example usage
+        getWallet(new Callback() {
+            @Override
+            public void onCompleted() {
+                getPortfolio();
+            }
+        });
 
         // Example of setting dynamic text in one of the TextViews
         // This can be a value retrieved from a database, an API, or user input
-        netWorthTextView.setText("$25000.00");
-        cashBalanceTextView.setText("$25000.00");
-        dateTextView.setText("1 May 2024");
+
 
         // If your search icon is clickable and opens a search interface
         searchIcon.setOnClickListener(view -> {
@@ -74,5 +88,191 @@ public class MainActivity extends AppCompatActivity {
 
 
 
+    }
+
+
+
+    private void getPortfolio(){
+        String url = BASE_URL + "/portfolio";
+        JsonArrayRequest jsonArrayRequest = new JsonArrayRequest(Request.Method.GET, url, null,
+                response -> {
+                    try {
+                        ArrayList<PortfolioItem> portfolioItems = new ArrayList<>();
+                        final double[] netWorthContainer = new double[1];
+
+                        for (int i = 0; i < response.length(); i++) {
+                            JSONObject portfolioObject = response.getJSONObject(i);
+                            String ticker = portfolioObject.getString("ticker");
+                            int qty = portfolioObject.getInt("qty");
+                            double totalCost = portfolioObject.getDouble("total_cost");
+                            double avgCost = portfolioObject.getDouble("avg_cost");
+
+                            Log.d("JSONParsing", "Ticker: " + ticker + ", Qty: " + qty + ", TotalCost: " + totalCost + ", AvgCost: " + avgCost);
+                            getCostValues(ticker, (receivedTicker, c, d, dp) -> {
+                                Log.d("cvaluesblahblah", String.valueOf(c));
+                                PortfolioItem item = new PortfolioItem(
+                                        ticker,
+                                        qty,
+                                        totalCost,
+                                        avgCost,
+                                        (Math.round(c * 100.0) / 100.0),
+                                        (Math.round(d * 100.0) / 100.0),
+                                        (Math.round(dp * 100.0) / 100.0)
+                                );
+                                portfolioItems.add(item);
+                                Log.d("PortfolioItem", item.toString());
+                                if (portfolioItems.size() == response.length()) {
+                                    // All items have been processed, update UI here
+                                    updateUI(portfolioItems);
+                                }
+                            });
+
+
+
+
+                            netWorthContainer[0] += portfolioObject.getDouble("total_cost");
+
+                            Log.d("portfolioobject", String.valueOf(portfolioObject));
+
+                        }
+
+
+                        Log.d("networth", String.valueOf(netWorthContainer[0]));
+
+
+
+                        double finalNetWorth = netWorthContainer[0] + balance;
+                        Log.d("here", String.valueOf(netWorthContainer[0]));
+                        Log.d("here", String.valueOf(balance));
+
+                        TextView NetWorth = findViewById(R.id.networth);
+                        NetWorth.setText(String.format(Locale.getDefault(), "Net Worth: $%.2f", finalNetWorth));
+
+                        Log.d("PortfolioResponse", portfolioItems.toString());
+                    } catch (Exception e) {
+                        throw new RuntimeException(e);
+                    }
+
+                },
+                error -> {
+                    Log.e("getPortfolio", "Error: " + error.toString());
+                });
+        requestQueue.add(jsonArrayRequest);
+    }
+
+    private void setupItemTouchHelper(RecyclerView recyclerView, ArrayList<PortfolioItem> portfolioItems, PortfolioAdapter p_adapter) {
+        ItemTouchHelper.SimpleCallback simpleItemTouchCallback = new ItemTouchHelper.SimpleCallback(ItemTouchHelper.UP | ItemTouchHelper.DOWN, 0) {
+
+            @Override
+            public boolean onMove(RecyclerView recyclerView, RecyclerView.ViewHolder viewHolder, RecyclerView.ViewHolder target) {
+                final int fromPosition = viewHolder.getAbsoluteAdapterPosition();
+                final int toPosition = target.getAbsoluteAdapterPosition();
+
+                // If specific position checks are needed, implement them here
+                // For now, allow moving within any positions
+
+                Collections.swap(portfolioItems, fromPosition, toPosition);
+                p_adapter.notifyItemMoved(fromPosition, toPosition);
+                return true;
+            }
+
+            @Override
+            public void onSwiped(RecyclerView.ViewHolder viewHolder, int swipeDir) {
+                // No swiping action needed
+            }
+
+            @Override
+            public void onSelectedChanged(RecyclerView.ViewHolder viewHolder, int actionState) {
+                super.onSelectedChanged(viewHolder, actionState);
+                if (actionState != ItemTouchHelper.ACTION_STATE_IDLE) {
+                    viewHolder.itemView.setAlpha(0.5f); // Change alpha to indicate dragging
+                }
+            }
+
+            @Override
+            public void clearView(RecyclerView recyclerView, RecyclerView.ViewHolder viewHolder) {
+                super.clearView(recyclerView, viewHolder);
+                viewHolder.itemView.setAlpha(1.0f); // Restore alpha after moving
+            }
+        };
+
+        ItemTouchHelper itemTouchHelper = new ItemTouchHelper(simpleItemTouchCallback);
+        itemTouchHelper.attachToRecyclerView(recyclerView);
+    }
+
+
+
+    private void updateUI(ArrayList<PortfolioItem> portfolioItems) {
+        RecyclerView recyclerView = findViewById(R.id.recyclerView);
+        PortfolioAdapter p_adapter = new PortfolioAdapter(portfolioItems);
+        recyclerView.setAdapter(p_adapter);
+        recyclerView.setLayoutManager(new LinearLayoutManager(this));
+        setupItemTouchHelper(recyclerView, portfolioItems, p_adapter);
+
+    }
+
+
+    public interface QuoteResponseListener {
+        void onQuoteReceived(String ticker, double c, double d, double dp);
+    }
+    private void getCostValues (String ticker, QuoteResponseListener listener){
+        String url = BASE_URL + "/quote/" + ticker ;
+        AtomicReference<Double> c = new AtomicReference<>((double) 0);
+        AtomicReference<Double> d = new AtomicReference<>((double) 0);
+        AtomicReference<Double> dp = new AtomicReference<>((double) 0);
+        JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(Request.Method.GET, url, null,
+                response -> {
+                try {
+
+                    JSONObject quoteObject = response;
+                    Log.d("quoteValues" + ticker, quoteObject.toString());
+
+                    c.set(quoteObject.getDouble("c"));
+                    d.set(quoteObject.getDouble("c"));
+                    dp.set(quoteObject.getDouble("c"));
+                    listener.onQuoteReceived(ticker, c.get(), d.get(), dp.get());
+//
+                    Log.d("getCHangeValuesttry", String.valueOf(c.get()));
+                }catch (JSONException e) {
+                    Log.e("getCostValues", "Error: " + e.toString());
+                }
+                },
+                error -> {
+                    Log.e("getCostValues", "Error: " + error.toString());
+                });
+        requestQueue.add(jsonObjectRequest);
+    }
+
+
+    private void getWallet(Callback callback) {
+        String url = BASE_URL + "/wallet";
+        JsonArrayRequest jsonArrayRequest = new JsonArrayRequest(Request.Method.GET, url, null,
+                response -> {
+                    try {
+                        // Assuming 'balance' is a field in your JSON object
+                        if (response.length() > 0) {
+                            JSONObject walletObject = response.getJSONObject(0);
+                            balance = walletObject.getDouble("balance");
+
+                            Log.d("WalletResponse", walletObject.toString());
+                            TextView cashBalanceTextView = findViewById(R.id.Balance);
+                            String balanceText = String.format(Locale.getDefault(), "$%.2f", balance);
+                            cashBalanceTextView.setText(balanceText);
+                        }
+
+
+//
+                    } catch (JSONException e) {
+                        Log.e("getWallet", "Error: " + e.toString());
+                        // Handle the case where 'balance' field is not in the response or there is a parsing error
+                    }
+                    if (callback != null) {
+                        callback.onCompleted();
+                    }
+                },
+                error -> {
+                    Log.e("getWallet", "Error: " + error.toString());
+                });
+        requestQueue.add(jsonArrayRequest);
     }
 }
