@@ -1,5 +1,6 @@
 package com.example.assgn4;
 
+import android.content.Context;
 import android.content.Intent;
 import android.graphics.Canvas;
 import android.graphics.Color;
@@ -21,11 +22,19 @@ import com.android.volley.toolbox.Volley;
 import android.util.Log;
 
 import androidx.core.content.ContextCompat;
+import androidx.fragment.app.FragmentManager;
+import androidx.fragment.app.FragmentTransaction;
 import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import android.view.KeyEvent;
 import android.view.View;
+import android.view.inputmethod.EditorInfo;
+import android.view.inputmethod.InputMethodManager;
+import android.widget.ArrayAdapter;
+import android.widget.AutoCompleteTextView;
+import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -42,12 +51,15 @@ import java.util.Objects;
 import java.util.concurrent.atomic.AtomicReference;
 
 public class MainActivity extends AppCompatActivity {
-
+    String[] fruits = {"Apple", "Almond","Banana", "Cherry", "Date", "Grape", "Kiwi", "Mango", "Pear"};
     private RecyclerView stocksRecyclerView;
     private StockAdapter stocksAdapter;
     private List<Stock> stockItems; // Your data
     private RequestQueue requestQueue;
     private double balance;
+    ImageView searchIcon, backIcon, crossIcon;
+
+    TextView titleTextView;
     private final String BASE_URL = "https://assgn3-pooja.wl.r.appspot.com";
 
     @Override
@@ -58,9 +70,11 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         TextView titleTextView = findViewById(R.id.titleTextView);
-        ImageView searchIcon = findViewById(R.id.searchIcon);
         TextView dateTextView = findViewById(R.id.dateTextView);
         TextView netWorthTextView = findViewById(R.id.networth);
+        searchIcon = findViewById(R.id.searchIcon);
+        backIcon = findViewById(R.id.backIcon);
+        crossIcon = findViewById(R.id.crossIcon);
 
         TextView poweredByLabel = findViewById(R.id.poweredByLabel);
         requestQueue = Volley.newRequestQueue(this);
@@ -74,15 +88,86 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        // Example of setting dynamic text in one of the TextViews
-        // This can be a value retrieved from a database, an API, or user input
+        ArrayAdapter<String> adapter = new ArrayAdapter<String>
+                (this, R.layout.custom_select_dialog_item, fruits);
+        AutoCompleteTextView actv = (AutoCompleteTextView) findViewById(R.id.autoCompleteTextView);
+        actv.setThreshold(1);//will start working from first character
+        actv.setAdapter(adapter);
 
-
-        // If your search icon is clickable and opens a search interface
-        searchIcon.setOnClickListener(view -> {
-            // Handle search icon click event here
-            // e.g., open search dialog or activity
+        searchIcon.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                titleTextView.setVisibility(View.GONE);
+                searchIcon.setVisibility(View.GONE);
+                backIcon.setVisibility(View.VISIBLE);
+                crossIcon.setVisibility(View.VISIBLE);
+                actv.setVisibility(View.VISIBLE);
+//                actv.setVisibility(View.VISIBLE);
+                // Request focus for the EditText and open the keyboard
+                actv.requestFocus();
+                InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+                imm.showSoftInput(actv, InputMethodManager.SHOW_IMPLICIT);
+            }
         });
+
+        crossIcon.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                actv.setText("");
+            }
+        });
+
+        backIcon.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                // Hide the EditText and the cross, show the title and search icon
+                titleTextView.setVisibility(View.VISIBLE);
+                searchIcon.setVisibility(View.VISIBLE);
+                backIcon.setVisibility(View.GONE);
+                crossIcon.setVisibility(View.GONE);
+                actv.setVisibility(View.GONE);
+//                actv.setVisibility(View.GONE);
+
+                // Hide the keyboard
+                InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+                imm.hideSoftInputFromWindow(actv.getWindowToken(), 0);
+            }
+        });
+
+        actv.setOnEditorActionListener(new TextView.OnEditorActionListener() {
+            @Override
+            public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
+                if (actionId == EditorInfo.IME_ACTION_SEARCH) {
+                    // Perform search and open new fragment with search query
+                    performSearchAndOpenFragment(v.getText().toString());
+
+                    // Reset views to default state if needed
+                    titleTextView.setVisibility(View.VISIBLE);
+                    searchIcon.setVisibility(View.VISIBLE);
+                    backIcon.setVisibility(View.GONE);
+                    crossIcon.setVisibility(View.GONE);
+                    actv.setVisibility(View.GONE);
+
+
+
+                    return true; // Consume the action
+                }
+                return false; // Pass on to other listeners if not a search action
+            }
+
+            private void performSearchAndOpenFragment(String query) {
+                // Hide the keyboard
+                InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+                if (imm != null) {
+                    imm.hideSoftInputFromWindow(actv.getWindowToken(), 0);
+                }
+
+                // Replace with your code to create the fragment and perform the transaction
+
+            }
+
+        });
+
 
         // Similarly, if you want to set a click listener to the TextView
         poweredByLabel.setOnClickListener(view -> {
@@ -147,6 +232,10 @@ public class MainActivity extends AppCompatActivity {
                     Log.e("getFavorite", "Error: " + error.toString());
                 });
         requestQueue.add(jsonArrayRequest);
+    }
+
+    public String[] getFruits() {
+        return new String[]{"Apple", "Apricot", "Banana", "Cherry", "Date", "Fig", "Grape", "Kiwi"};
     }
 
 
