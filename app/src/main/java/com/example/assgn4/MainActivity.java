@@ -19,11 +19,11 @@ import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
 
 
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.util.Log;
 
 import androidx.core.content.ContextCompat;
-import androidx.fragment.app.FragmentManager;
-import androidx.fragment.app.FragmentTransaction;
 import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -34,16 +34,15 @@ import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.ArrayAdapter;
 import android.widget.AutoCompleteTextView;
-import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
@@ -51,13 +50,16 @@ import java.util.Objects;
 import java.util.concurrent.atomic.AtomicReference;
 
 public class MainActivity extends AppCompatActivity {
-    String[] fruits = {"Apple", "Almond","Banana", "Cherry", "Date", "Grape", "Kiwi", "Mango", "Pear"};
+//    String[] fruits = {"Apple", "Almond","Banana", "Cherry", "Date", "Grape", "Kiwi", "Mango", "Pear"};
+    String[] autoCompleteArray;
+
     private RecyclerView stocksRecyclerView;
     private StockAdapter stocksAdapter;
     private List<Stock> stockItems; // Your data
     private RequestQueue requestQueue;
     private double balance;
     ImageView searchIcon, backIcon, crossIcon;
+    AutoCompleteTextView actv;
 
     TextView titleTextView;
     private final String BASE_URL = "https://assgn3-pooja.wl.r.appspot.com";
@@ -75,6 +77,46 @@ public class MainActivity extends AppCompatActivity {
         searchIcon = findViewById(R.id.searchIcon);
         backIcon = findViewById(R.id.backIcon);
         crossIcon = findViewById(R.id.crossIcon);
+        actv = (AutoCompleteTextView) findViewById(R.id.autoCompleteTextView);
+        if (actv != null) {
+            actv.setThreshold(1);
+
+            // The callback method should be the place where you set the adapter
+            actv.addTextChangedListener(new TextWatcher() {
+                @Override
+                public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+                    // No action required here for this scenario
+                }
+
+                @Override
+                public void onTextChanged(CharSequence s, int start, int before, int count) {
+                    // This is where you would call getAutoCompleteArray each time the text changes
+                    if (s.length() >= 1) { // Checking if at least one character is entered
+                        getAutoCompleteArray(s.toString(), new CallbackNew() {
+                            @Override
+                            public void onCompletedNew(String[] autoCompleteArray) {
+                                runOnUiThread(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        ArrayAdapter<String> adapter = new ArrayAdapter<>(
+                                                MainActivity.this,
+                                                R.layout.custom_select_dialog_item,
+                                                autoCompleteArray);
+                                        actv.setAdapter(adapter);
+                                        adapter.notifyDataSetChanged();
+                                    }
+                                });
+                            }
+                        });
+                    }
+                }
+
+                @Override
+                public void afterTextChanged(Editable s) {
+                    // No action required here for this scenario
+                }
+            });
+        }
 
         TextView poweredByLabel = findViewById(R.id.poweredByLabel);
         requestQueue = Volley.newRequestQueue(this);
@@ -88,11 +130,11 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        ArrayAdapter<String> adapter = new ArrayAdapter<String>
-                (this, R.layout.custom_select_dialog_item, fruits);
-        AutoCompleteTextView actv = (AutoCompleteTextView) findViewById(R.id.autoCompleteTextView);
-        actv.setThreshold(1);//will start working from first character
-        actv.setAdapter(adapter);
+//
+
+
+
+
 
         searchIcon.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -234,8 +276,62 @@ public class MainActivity extends AppCompatActivity {
         requestQueue.add(jsonArrayRequest);
     }
 
-    public String[] getFruits() {
-        return new String[]{"Apple", "Apricot", "Banana", "Cherry", "Date", "Fig", "Grape", "Kiwi"};
+    public void getAutoCompleteArray(String inputText, CallbackNew callback ) {
+        String url = BASE_URL + "/autocomplete/"+ inputText;
+        JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(Request.Method.GET, url, null,
+                response -> {
+                    try {
+                        JSONArray autoArray = null;
+                        List<String> filteredSymbols = new ArrayList<>();
+                        if (response.length() > 0) {
+                            autoArray = response.getJSONArray("result");
+
+                            for (int i = 0; i < autoArray.length(); i++) {
+                                // Get the current JSON object
+                                JSONObject jsonObject = autoArray.getJSONObject(i);
+
+                                // Check if the JSON object has a string field called "displaySymbol"
+                                if (jsonObject.has("displaySymbol")) {
+                                    String displaySymbol = jsonObject.getString("displaySymbol");
+                                    String description = jsonObject.getString("description");
+
+                                    // If displaySymbol doesn't contain a ".", add it to the filtered list
+                                    if (!displaySymbol.contains(".")) {
+                                        filteredSymbols.add(displaySymbol +" | "+description);
+                                    }
+                                }
+                            }
+
+                        }
+
+                        Log.d("autoObject", String.valueOf(autoArray));
+                        Log.d("filteredSymbols", String.valueOf(filteredSymbols));
+
+
+                        autoCompleteArray = filteredSymbols.toArray(new String[0]);
+
+//
+                    } catch (JSONException e) {
+                        Log.e("getAutocompleteError", "Error: " + e.toString());
+                        // Handle the case where 'balance' field is not in the response or there is a parsing error
+                    }
+                    if (callback != null) {
+                        callback.onCompletedNew(autoCompleteArray);
+                    }
+                },
+                error -> {
+                    Log.e("getAutocomplete", "Error: " + error.toString());
+                });
+        requestQueue.add(jsonObjectRequest);
+
+
+
+
+//        autoCompleteArray = new String[]{"Apple", "Apricot", "Banana", "Cherry", "Date", "Fig", "Grape", "Kiwi"};
+//        if (callback != null) {
+//            callback.onCompletedNew(autoCompleteArray);
+//        }
+
     }
 
 
