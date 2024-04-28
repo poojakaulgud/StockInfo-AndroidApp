@@ -17,6 +17,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import com.android.volley.RequestQueue;
 import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
+import com.example.assgn4.databinding.ActivityMainBinding;
 
 
 import android.text.Editable;
@@ -24,6 +25,10 @@ import android.text.TextWatcher;
 import android.util.Log;
 
 import androidx.core.content.ContextCompat;
+import androidx.fragment.app.FragmentManager;
+import androidx.fragment.app.FragmentTransaction;
+import androidx.navigation.NavController;
+import androidx.navigation.Navigation;
 import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -32,9 +37,12 @@ import android.view.KeyEvent;
 import android.view.View;
 import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputMethodManager;
+import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.AutoCompleteTextView;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
+import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -50,15 +58,13 @@ import java.util.Objects;
 import java.util.concurrent.atomic.AtomicReference;
 
 public class MainActivity extends AppCompatActivity {
-//    String[] fruits = {"Apple", "Almond","Banana", "Cherry", "Date", "Grape", "Kiwi", "Mango", "Pear"};
     String[] autoCompleteArray;
-
     private RecyclerView stocksRecyclerView;
     private StockAdapter stocksAdapter;
     private List<Stock> stockItems; // Your data
     private RequestQueue requestQueue;
     private double balance;
-    ImageView searchIcon, backIcon, crossIcon;
+    ImageView searchIcon, backIcon, crossIcon, starIcon;
     AutoCompleteTextView actv;
 
     TextView titleTextView;
@@ -71,12 +77,16 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+//        NavController navController = Navigation.findNavController(this, R.id.nav_host_fragment_content_main);
+
         TextView titleTextView = findViewById(R.id.titleTextView);
+        TextView tickerTextView = findViewById(R.id.tickerTextView);
         TextView dateTextView = findViewById(R.id.dateTextView);
         TextView netWorthTextView = findViewById(R.id.networth);
         searchIcon = findViewById(R.id.searchIcon);
         backIcon = findViewById(R.id.backIcon);
         crossIcon = findViewById(R.id.crossIcon);
+        starIcon = findViewById(R.id.starIcon);
         actv = (AutoCompleteTextView) findViewById(R.id.autoCompleteTextView);
         if (actv != null) {
             actv.setThreshold(1);
@@ -116,6 +126,42 @@ public class MainActivity extends AppCompatActivity {
                     // No action required here for this scenario
                 }
             });
+
+
+
+            actv.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+                @Override
+                public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                    searchIcon.setVisibility(View.GONE);
+                    backIcon.setVisibility(View.VISIBLE);
+                    crossIcon.setVisibility(View.GONE);
+                    String selectedItem = (String) parent.getItemAtPosition(position);
+                    String displaySymbol = selectedItem.split(" \\| ")[0];  // Extract displaySymbol
+                    actv.setText(displaySymbol);  // Set only the displaySymbol as the text
+                    actv.setSelection(displaySymbol.length());
+                    actv.setVisibility(View.GONE);
+                    starIcon.setVisibility(View.VISIBLE);
+
+                    tickerTextView.setVisibility(View.VISIBLE);
+                    tickerTextView.setText(displaySymbol);
+
+
+                    FragmentManager fragmentManager = getSupportFragmentManager();
+                    FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
+
+                    DetailFragment detailFragment = DetailFragment.newInstance(displaySymbol);
+
+                    fragmentTransaction.replace(R.id.homePage, detailFragment);
+
+
+                    fragmentTransaction.addToBackStack(null);
+
+                    fragmentTransaction.commit();
+                    LinearLayout homePageContent = findViewById(R.id.homePageContent);
+                    homePageContent.setVisibility(View.GONE);
+                }
+            });
+
         }
 
         TextView poweredByLabel = findViewById(R.id.poweredByLabel);
@@ -144,6 +190,8 @@ public class MainActivity extends AppCompatActivity {
                 backIcon.setVisibility(View.VISIBLE);
                 crossIcon.setVisibility(View.VISIBLE);
                 actv.setVisibility(View.VISIBLE);
+                tickerTextView.setVisibility(View.GONE);
+                starIcon.setVisibility(View.GONE);
 //                actv.setVisibility(View.VISIBLE);
                 // Request focus for the EditText and open the keyboard
                 actv.requestFocus();
@@ -163,11 +211,17 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 // Hide the EditText and the cross, show the title and search icon
+                LinearLayout homePageContent = findViewById(R.id.homePageContent);
+                homePageContent.setVisibility(View.VISIBLE);
+                tickerTextView.setVisibility(View.GONE);
                 titleTextView.setVisibility(View.VISIBLE);
                 searchIcon.setVisibility(View.VISIBLE);
                 backIcon.setVisibility(View.GONE);
                 crossIcon.setVisibility(View.GONE);
+                starIcon.setVisibility(View.GONE);
                 actv.setVisibility(View.GONE);
+                ScrollView firstFragment = findViewById(R.id.firstFragment);
+                firstFragment.setVisibility(View.GONE);
 //                actv.setVisibility(View.GONE);
 
                 // Hide the keyboard
@@ -184,12 +238,21 @@ public class MainActivity extends AppCompatActivity {
                     performSearchAndOpenFragment(v.getText().toString());
 
                     // Reset views to default state if needed
+                    tickerTextView.setVisibility(View.GONE);
                     titleTextView.setVisibility(View.VISIBLE);
                     searchIcon.setVisibility(View.VISIBLE);
                     backIcon.setVisibility(View.GONE);
                     crossIcon.setVisibility(View.GONE);
                     actv.setVisibility(View.GONE);
 
+
+                    FragmentManager fragmentManager = getSupportFragmentManager();
+                    FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
+
+                    EmptyFragment emptyFragment = new EmptyFragment();
+
+                    fragmentTransaction.replace(R.id.homePage, emptyFragment);
+                    fragmentTransaction.commit();
 
 
                     return true; // Consume the action
@@ -225,6 +288,9 @@ public class MainActivity extends AppCompatActivity {
 
 
     }
+
+
+
 
 
     private void getFavorites(){
@@ -287,15 +353,10 @@ public class MainActivity extends AppCompatActivity {
                             autoArray = response.getJSONArray("result");
 
                             for (int i = 0; i < autoArray.length(); i++) {
-                                // Get the current JSON object
                                 JSONObject jsonObject = autoArray.getJSONObject(i);
-
-                                // Check if the JSON object has a string field called "displaySymbol"
                                 if (jsonObject.has("displaySymbol")) {
                                     String displaySymbol = jsonObject.getString("displaySymbol");
                                     String description = jsonObject.getString("description");
-
-                                    // If displaySymbol doesn't contain a ".", add it to the filtered list
                                     if (!displaySymbol.contains(".")) {
                                         filteredSymbols.add(displaySymbol +" | "+description);
                                     }
@@ -313,7 +374,6 @@ public class MainActivity extends AppCompatActivity {
 //
                     } catch (JSONException e) {
                         Log.e("getAutocompleteError", "Error: " + e.toString());
-                        // Handle the case where 'balance' field is not in the response or there is a parsing error
                     }
                     if (callback != null) {
                         callback.onCompletedNew(autoCompleteArray);
