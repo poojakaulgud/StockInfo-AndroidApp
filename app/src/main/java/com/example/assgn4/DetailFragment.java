@@ -21,8 +21,11 @@ import androidx.viewpager2.widget.ViewPager2;
 
 import com.android.volley.Request;
 import com.android.volley.RequestQueue;
+import com.android.volley.Response;
+import com.android.volley.VolleyError;
 import com.android.volley.toolbox.JsonArrayRequest;
 import com.android.volley.toolbox.JsonObjectRequest;
+import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
 import com.google.android.material.tabs.TabLayout;
 import com.google.android.material.tabs.TabLayoutMediator;
@@ -38,10 +41,10 @@ import java.util.concurrent.atomic.AtomicReference;
 
 public class DetailFragment extends Fragment {
     private RequestQueue requestQueue;
-
+    public String description;
     private final String BASE_URL = "https://assgn3-pooja.wl.r.appspot.com";
     public String sts;
-    Double c;
+    double c, total, avg, curr_price;
     int qty;
     TextView fragTicker;
     TextView fragDesc;
@@ -204,7 +207,7 @@ public class DetailFragment extends Fragment {
                 buyButton.setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(View view) {
-                        if( value[0]<0){
+                        if(value[0]<0){
                             LayoutInflater inflater = LayoutInflater.from(view.getContext());
                             View layout = inflater.inflate(R.layout.custom_toast_layout,null);
 
@@ -228,7 +231,7 @@ public class DetailFragment extends Fragment {
                             toast.setView(layout); // Set the custom layout to Toast
                             toast.show();
                         }
-                        else{
+                        else if(value[0]==0){
                             LayoutInflater inflater = LayoutInflater.from(view.getContext());
                             View layout = inflater.inflate(R.layout.custom_toast_layout,null);
 
@@ -239,6 +242,22 @@ public class DetailFragment extends Fragment {
                             toast.setDuration(Toast.LENGTH_SHORT);
                             toast.setView(layout); // Set the custom layout to Toast
                             toast.show();
+                        }
+                        else if(qty==0){
+                            createPortfolio(value[0]);
+                            dialog.dismiss();
+                        }
+                        else{
+                            updatePortfolio(value[0],"bought");
+                            updateBalance(value[0],"bought");
+                            Log.d("MY LOGSSSSSSSSSS CHECKKKKKK", String.valueOf(qty));
+                            dialog.dismiss();
+                            getQuoteValues(new Callback() {
+                                @Override
+                                public void onCompleted() {
+                                    getPortfolio();
+                                }
+                            });
                         }
                     }
                 });
@@ -272,7 +291,7 @@ public class DetailFragment extends Fragment {
                             toast.setView(layout); // Set the custom layout to Toast
                             toast.show();
                         }
-                        else{
+                        else if(value[0]==0){
                             LayoutInflater inflater = LayoutInflater.from(view.getContext());
                             View layout = inflater.inflate(R.layout.custom_toast_layout,null);
 
@@ -283,6 +302,22 @@ public class DetailFragment extends Fragment {
                             toast.setDuration(Toast.LENGTH_SHORT);
                             toast.setView(layout); // Set the custom layout to Toast
                             toast.show();
+                        }
+                        else if((qty-value[0])==0){
+                            deletePortfolio(value[0]);
+                            dialog.dismiss();
+                        }
+                        else{
+                            updatePortfolio(value[0],"sold");
+                            updateBalance(value[0],"sold");
+                            Log.d("MY LOGSSSSSSSSSS", String.valueOf(value[0]));
+                            dialog.dismiss();
+                            getQuoteValues(new Callback() {
+                                @Override
+                                public void onCompleted() {
+                                    getPortfolio();
+                                }
+                            });
                         }
                     }
                 });
@@ -319,6 +354,181 @@ public class DetailFragment extends Fragment {
         return view;
     }
 
+    public void showCongratulationsDialog(String action, int shares) {
+        AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
+        LayoutInflater inflater = this.getLayoutInflater();
+        View dialogView = inflater.inflate(R.layout.dialog_congratulations, null);
+        builder.setView(dialogView);
+        TextView dialogText = dialogView.findViewById(R.id.dialogText);
+        dialogText.setText(String.format(Locale.getDefault(), "You have successfully %s %d shares of %s",action, shares, sts));
+
+        AlertDialog dialog = builder.create();
+        if (dialog.getWindow() != null) {
+            dialog.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+        }
+
+        // Set the button click listener
+        Button buttonDone = dialogView.findViewById(R.id.button_done);
+        buttonDone.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                // Handle the Done button click
+                dialog.dismiss();
+            }
+        });
+
+        dialog.show();
+    }
+
+
+    private void deletePortfolio(int shares){
+        String url = BASE_URL + "/portfolio/"+sts;
+        StringRequest deleteRequest = new StringRequest(Request.Method.DELETE, url,
+                new Response.Listener<String>() {
+                    @Override
+                    public void onResponse(String response) {
+                        Log.d("deletePortfolio", response.toString());
+                        updateBalance(shares,"sold");
+                        getQuoteValues(new Callback() {
+                            @Override
+                            public void onCompleted() {
+                                getPortfolio();
+                            }
+                        });
+
+                    }
+                }, new Response.ErrorListener() {
+            @Override
+            public void onErrorResponse(VolleyError error) {
+                // Handle the error here
+                if(error.networkResponse != null) {
+                    String errorData = new String(error.networkResponse.data);
+                    Log.d("deletePortfolio", errorData);
+                }
+            }
+        });
+        requestQueue.add(deleteRequest);
+    }
+    private void createPortfolio(int shares){
+        String url = BASE_URL + "/portfolio";
+        JSONObject jsonBody = new JSONObject();
+        try {
+            jsonBody.put("ticker", sts);
+            jsonBody.put("description", description);
+            jsonBody.put("qty", shares);
+            jsonBody.put("total_cost", Math.round(shares*c*100)/100.00);
+            jsonBody.put("avg_cost", Math.round(((shares*c)/shares)*100)/100.00);
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+
+        JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(Request.Method.POST, url, jsonBody,
+                new Response.Listener<JSONObject>() {
+                    @Override
+                    public void onResponse(JSONObject response) {
+                        // Handle the response
+                        Log.d("createPortfolio", response.toString());
+                        updateBalance(shares,"bought");
+                        getQuoteValues(new Callback() {
+                            @Override
+                            public void onCompleted() {
+                                getPortfolio();
+                            }
+                        });
+                    }
+                },
+                new Response.ErrorListener() {
+                    @Override
+                    public void onErrorResponse(VolleyError error) {
+                        // Handle the error
+                        Log.e("Error", error.toString());
+                    }
+                }
+        );
+        requestQueue.add(jsonObjectRequest);
+    }
+
+
+    private void updateBalance(int shares, String action){
+
+        double new_balance = 0;
+        if(action.equals("bought")){
+            new_balance = balance - (shares*c);
+        }
+        if(action.equals("sold")){
+            new_balance = balance + (shares*c);
+        }
+
+        String url = BASE_URL + "/wallet/"+new_balance;
+        JSONObject jsonBody = new JSONObject();
+        try {
+            jsonBody.put("balance", new_balance);
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(Request.Method.PUT, url, jsonBody,
+                new Response.Listener<JSONObject>() {
+                    @Override
+                    public void onResponse(JSONObject response) {
+                        // Handle the response
+                        Log.d("updateWallet", response.toString());
+                        showCongratulationsDialog(action, shares);
+                    }
+                },
+                new Response.ErrorListener() {
+                    @Override
+                    public void onErrorResponse(VolleyError error) {
+                        // Handle the error
+                        Log.e("Error", error.toString());
+                    }
+                }
+        );
+        requestQueue.add(jsonObjectRequest);
+    }
+
+    private void updatePortfolio(int shares, String action){
+        double a_cost=0, t_cost=0;
+        int new_qty = 0;
+        Log.d("valueCheck", String.valueOf(total));
+        if(action.equals("bought")){
+            new_qty = qty +shares;
+            t_cost =  ((double) Math.round((total + (shares * c)) * 100) /100);
+            a_cost = (double) Math.round(((total + (shares * c)) / (qty + shares)) * 100) / 100;
+        }
+        if(action.equals("sold")){
+            new_qty = qty - shares;
+            t_cost =  ((double) Math.round((total - (shares * avg)) * 100) /100);
+            a_cost = (double) Math.round(((total - (shares * avg)) / (qty - shares)) * 100) / 100;
+        }
+        String url = BASE_URL + "/portfolio/"+sts;
+        JSONObject jsonBody = new JSONObject();
+        try {
+            jsonBody.put("qty", new_qty);
+            jsonBody.put("avg_cost", a_cost);
+            jsonBody.put("total_cost", t_cost);
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+
+        JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(Request.Method.PUT, url, jsonBody,
+                new Response.Listener<JSONObject>() {
+                    @Override
+                    public void onResponse(JSONObject response) {
+                        // Handle the response
+                        Log.d("updatePortfolio", response.toString());
+                    }
+                },
+                new Response.ErrorListener() {
+                    @Override
+                    public void onErrorResponse(VolleyError error) {
+                        // Handle the error
+                        Log.e("Error", error.toString());
+                    }
+                }
+        );
+        requestQueue.add(jsonObjectRequest);
+    }
+
 
     private void getWallet() {
         String url = BASE_URL + "/wallet";
@@ -353,7 +563,7 @@ public class DetailFragment extends Fragment {
                 response -> {
                     try {
                         String ticker = response.getString("ticker");
-                        String description = response.getString("name");
+                        description = response.getString("name");
                         String res_ipo = response.getString("ipo");
                         String res_industry = response.getString("finnhubIndustry");
                         String res_weburl = response.getString("weburl");
@@ -516,9 +726,9 @@ public class DetailFragment extends Fragment {
 
                         JSONObject jsonObject = response;
                         qty = jsonObject.getInt("qty");
-                        double total = jsonObject.getDouble("total_cost");
-                        double avg = jsonObject.getDouble("avg_cost");
-                        double curr_price = Math.round(((c-avg)*qty) * 100.0) / 100.0;
+                        total = jsonObject.getDouble("total_cost");
+                        avg = jsonObject.getDouble("avg_cost");
+                        curr_price = Math.round(((c-avg)*qty) * 100.0) / 100.0;
 //                        holder.tvMarketValue.setText(  ));
                         double market_value = (qty*c);
 //                        holder.d.setText(String.format(Locale.getDefault(), " $%.2f ", ));
@@ -550,6 +760,15 @@ public class DetailFragment extends Fragment {
                 },
                 error -> {
                     Log.e("getPortfolio", "Error: " + error.toString());
+                    qty = 0;
+                    pfShares.setText(String.valueOf(qty));
+                    pfMarketValue.setText("$0.00");
+                    pfTotalCost.setText("$0.00");
+                    pfAvgCost.setText("$0.00");
+                    pfChange.setText("$0.00");
+                    pfChange.setTextColor(Color.parseColor("#FFFFFF"));
+                    pfMarketValue.setTextColor(Color.parseColor("#FFFFFF"));
+
                 });
         requestQueue.add(jsonObjectRequest);
     }

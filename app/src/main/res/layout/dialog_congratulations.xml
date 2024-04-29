@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@drawable/rounded_button"
+    android:orientation="vertical"
+    android:padding="16dp">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:padding="8dp"
+        android:text="Congratulations!"
+        android:textAppearance="@style/TextAppearance.AppCompat.Large"
+        android:textColor="@android:color/white"
+        android:textStyle="bold" />
+
+    <TextView
+        android:id="@+id/dialogText"
+        android:layout_width="237dp"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:paddingBottom="24dp"
+        android:text="You have successfully bought 2 shares of AAPL"
+        android:textAlignment="center"
+        android:textColor="@android:color/white"
+        android:textSize="16sp"
+        android:textStyle="italic" />
+
+    <androidx.appcompat.widget.AppCompatButton
+        android:id="@+id/button_done"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@drawable/dialog_background"
+        android:text="DONE"
+        android:textColor="@android:color/holo_green_dark"
+        android:textStyle="bold" />
+    </LinearLayout>
