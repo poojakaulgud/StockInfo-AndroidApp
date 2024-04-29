@@ -10,6 +10,8 @@ import android.net.Uri;
 import android.os.Bundle;
 
 import com.android.volley.Request;
+import com.android.volley.Response;
+import com.android.volley.VolleyError;
 import com.android.volley.toolbox.JsonArrayRequest;
 import com.android.volley.toolbox.JsonObjectRequest;
 
@@ -63,6 +65,8 @@ public class MainActivity extends AppCompatActivity {
     private List<Stock> stockItems; // Your data
     private RequestQueue requestQueue;
     private double balance;
+    String d_symbol, d_desc;
+    boolean flagFavorite = false;
     ImageView searchIcon, backIcon, crossIcon, starIcon;
     AutoCompleteTextView actv;
 
@@ -86,6 +90,7 @@ public class MainActivity extends AppCompatActivity {
         backIcon = findViewById(R.id.backIcon);
         crossIcon = findViewById(R.id.crossIcon);
         starIcon = findViewById(R.id.starIcon);
+
         actv = (AutoCompleteTextView) findViewById(R.id.autoCompleteTextView);
         if (actv != null) {
             actv.setThreshold(1);
@@ -140,8 +145,21 @@ public class MainActivity extends AppCompatActivity {
                     String displaySymbol = selectedItem.split(" \\| ")[0];  // Extract displaySymbol
                     actv.setText(displaySymbol);  // Set only the displaySymbol as the text
                     actv.setSelection(displaySymbol.length());
+                    d_symbol = displaySymbol;
+                    d_desc = selectedItem.split(" \\| ")[1];
                     actv.setVisibility(View.GONE);
                     starIcon.setVisibility(View.VISIBLE);
+                    isFavorite(displaySymbol, new Callback() {
+                        @Override
+                        public void onCompleted() {
+                            if(flagFavorite){
+                                starIcon.setImageResource(R.drawable.full_star);
+                            }
+                            else{
+                                starIcon.setImageResource(R.drawable.star_border);
+                            }
+                        }
+                    });
 
                     tickerTextView.setVisibility(View.VISIBLE);
                     tickerTextView.setText(displaySymbol);
@@ -186,7 +204,28 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-//
+
+
+        starIcon.setOnClickListener(new View.OnClickListener(){
+            @Override
+            public void onClick(View v) {
+                if(flagFavorite){
+                    deleteFavorite(d_symbol, new Callback() {
+                        @Override
+                        public void onCompleted() {
+                            starIcon.setImageResource(R.drawable.star_border);
+                        }
+                    });
+                }else{
+                    addFavorite(d_symbol, d_desc, new Callback() {
+                        @Override
+                        public void onCompleted() {
+                            starIcon.setImageResource(R.drawable.full_star);
+                        }
+                    });
+                }
+            }
+        });
 
 
 
@@ -235,6 +274,8 @@ public class MainActivity extends AppCompatActivity {
                 searchIcon.setVisibility(View.VISIBLE);
                 backIcon.setVisibility(View.GONE);
                 crossIcon.setVisibility(View.GONE);
+
+                starIcon.setImageResource(R.drawable.star_border);
                 starIcon.setVisibility(View.GONE);
                 actv.setVisibility(View.GONE);
                 actv.setText("");
@@ -286,7 +327,17 @@ public class MainActivity extends AppCompatActivity {
                     actv.setSelection(displaySymbol.length());
                     actv.setVisibility(View.GONE);
                     starIcon.setVisibility(View.VISIBLE);
-
+                    isFavorite(displaySymbol, new Callback() {
+                        @Override
+                        public void onCompleted() {
+                            if(flagFavorite){
+                                starIcon.setImageResource(R.drawable.full_star);
+                            }
+                            else{
+                                starIcon.setImageResource(R.drawable.star_border);
+                            }
+                        }
+                    });
                     tickerTextView.setVisibility(View.VISIBLE);
                     tickerTextView.setText(displaySymbol);
 
@@ -340,6 +391,89 @@ public class MainActivity extends AppCompatActivity {
 
 
 
+    }
+
+    private void deleteFavorite(String ticker, Callback callback){
+        String url = BASE_URL + "/watchlist/" + ticker;
+        StringRequest deleteRequest = new StringRequest(Request.Method.DELETE, url,
+                response -> {
+                    try{
+                        Log.d("deleteFavorite", response.toString());
+                        flagFavorite = false;
+                        if (callback != null) {
+                            callback.onCompleted();
+                        }
+                    }catch (Exception e){
+                        Log.e("DELETE ERROR", String.valueOf(e));
+                    }
+                },
+                error -> {
+                    // Handle error here
+                    if (error.networkResponse != null && error.networkResponse.statusCode == 404) {
+                        Log.e("DELETE", "Document with the specified ticker not found");
+                    } else {
+                        Log.e("DELETE", "Error occurred: " + error.toString());
+                    }
+                }
+        );
+        requestQueue.add(deleteRequest);
+    }
+
+    private void addFavorite(String ticker, String description, Callback callback){
+        String url = BASE_URL + "/watchlist";
+        JSONObject jsonBody = new JSONObject();
+        try {
+            jsonBody.put("ticker", ticker);
+            jsonBody.put("description", description);
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+
+        JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(Request.Method.POST, url, jsonBody,
+                new Response.Listener<JSONObject>() {
+                    @Override
+                    public void onResponse(JSONObject response) {
+                        // Handle the response
+                        Log.d("addFavorite", response.toString());
+                        flagFavorite = true;
+                        if (callback != null) {
+                            callback.onCompleted();
+                        }
+                    }
+
+                },
+                new Response.ErrorListener() {
+                    @Override
+                    public void onErrorResponse(VolleyError error) {
+                        // Handle the error
+                        Log.e("addFavorite", error.toString());
+                    }
+
+                }
+        );
+        requestQueue.add(jsonObjectRequest);;
+    }
+
+
+    private void isFavorite(String ticker, Callback callback){
+        String url = BASE_URL + "/watchlist/"+ticker;
+        JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(Request.Method.GET, url, null,
+                response -> {
+                    try {
+                        flagFavorite = true;
+                        Log.d("isFavorite",response.toString());
+                    }catch (Exception e) {
+                        throw new RuntimeException(e);
+                    }
+                    if (callback != null) {
+                        callback.onCompleted();
+                    }
+                },
+                error -> {
+                    flagFavorite = false;
+                    Log.e("isFavorite", "Error: " + error.toString());
+                });
+        requestQueue.add(jsonObjectRequest);
     }
 
 
