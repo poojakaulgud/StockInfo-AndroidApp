@@ -17,7 +17,6 @@ import androidx.appcompat.app.AppCompatActivity;
 import com.android.volley.RequestQueue;
 import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
-import com.example.assgn4.databinding.ActivityMainBinding;
 
 
 import android.text.Editable;
@@ -129,6 +128,8 @@ public class MainActivity extends AppCompatActivity {
 
 
 
+
+
             actv.setOnItemClickListener(new AdapterView.OnItemClickListener() {
                 @Override
                 public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
@@ -145,6 +146,8 @@ public class MainActivity extends AppCompatActivity {
                     tickerTextView.setVisibility(View.VISIBLE);
                     tickerTextView.setText(displaySymbol);
 
+                    InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+                    imm.hideSoftInputFromWindow(actv.getWindowToken(), 0);
 
                     FragmentManager fragmentManager = getSupportFragmentManager();
                     FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
@@ -160,6 +163,13 @@ public class MainActivity extends AppCompatActivity {
                     LinearLayout homePageContent = findViewById(R.id.homePageContent);
                     homePageContent.setVisibility(View.GONE);
                 }
+
+//                private void hideKeyboard(View view) {
+//                    InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+//                    if (imm != null) {
+//                        imm.hideSoftInputFromWindow(view.getWindowToken(), 0);
+//                    }
+//                }
             });
 
         }
@@ -212,6 +222,13 @@ public class MainActivity extends AppCompatActivity {
             public void onClick(View v) {
                 // Hide the EditText and the cross, show the title and search icon
                 LinearLayout homePageContent = findViewById(R.id.homePageContent);
+                getWallet(new Callback() {
+                    @Override
+                    public void onCompleted() {
+                        getPortfolio();
+                        getFavorites();
+                    }
+                });
                 homePageContent.setVisibility(View.VISIBLE);
                 tickerTextView.setVisibility(View.GONE);
                 titleTextView.setVisibility(View.VISIBLE);
@@ -220,6 +237,7 @@ public class MainActivity extends AppCompatActivity {
                 crossIcon.setVisibility(View.GONE);
                 starIcon.setVisibility(View.GONE);
                 actv.setVisibility(View.GONE);
+                actv.setText("");
                 ScrollView firstFragment = findViewById(R.id.firstFragment);
                 firstFragment.setVisibility(View.GONE);
 //                actv.setVisibility(View.GONE);
@@ -233,7 +251,8 @@ public class MainActivity extends AppCompatActivity {
         actv.setOnEditorActionListener(new TextView.OnEditorActionListener() {
             @Override
             public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
-                if (actionId == EditorInfo.IME_ACTION_SEARCH) {
+
+                if ((actionId == EditorInfo.IME_ACTION_SEARCH)) {
                     // Perform search and open new fragment with search query
                     performSearchAndOpenFragment(v.getText().toString());
 
@@ -257,8 +276,42 @@ public class MainActivity extends AppCompatActivity {
 
                     return true; // Consume the action
                 }
+
+                if((event != null && (event.getKeyCode() == KeyEvent.KEYCODE_ENTER)) || (actionId == EditorInfo.IME_ACTION_DONE)){
+                    searchIcon.setVisibility(View.GONE);
+                    backIcon.setVisibility(View.VISIBLE);
+                    crossIcon.setVisibility(View.GONE);
+                    String displaySymbol = actv.getText().toString().toUpperCase();  // Extract displaySymbol
+                    actv.setText(displaySymbol);  // Set only the displaySymbol as the text
+                    actv.setSelection(displaySymbol.length());
+                    actv.setVisibility(View.GONE);
+                    starIcon.setVisibility(View.VISIBLE);
+
+                    tickerTextView.setVisibility(View.VISIBLE);
+                    tickerTextView.setText(displaySymbol);
+
+                    InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
+                    imm.hideSoftInputFromWindow(actv.getWindowToken(), 0);
+
+                    FragmentManager fragmentManager = getSupportFragmentManager();
+                    FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
+
+                    DetailFragment detailFragment = DetailFragment.newInstance(displaySymbol);
+
+                    fragmentTransaction.replace(R.id.homePage, detailFragment);
+
+
+                    fragmentTransaction.addToBackStack(null);
+
+                    fragmentTransaction.commit();
+                    LinearLayout homePageContent = findViewById(R.id.homePageContent);
+                    homePageContent.setVisibility(View.GONE);
+                }
+
                 return false; // Pass on to other listeners if not a search action
             }
+
+
 
             private void performSearchAndOpenFragment(String query) {
                 // Hide the keyboard
@@ -357,7 +410,8 @@ public class MainActivity extends AppCompatActivity {
                                 if (jsonObject.has("displaySymbol")) {
                                     String displaySymbol = jsonObject.getString("displaySymbol");
                                     String description = jsonObject.getString("description");
-                                    if (!displaySymbol.contains(".")) {
+                                    String type = jsonObject.getString("type");
+                                    if (!displaySymbol.contains(".") && (type.equals("Common Stock"))) {
                                         filteredSymbols.add(displaySymbol +" | "+description);
                                     }
                                 }
@@ -663,8 +717,8 @@ public class MainActivity extends AppCompatActivity {
                     Log.d("quoteValues" + ticker, quoteObject.toString());
 
                     c.set(quoteObject.getDouble("c"));
-                    d.set(quoteObject.getDouble("c"));
-                    dp.set(quoteObject.getDouble("c"));
+                    d.set(quoteObject.getDouble("d"));
+                    dp.set(quoteObject.getDouble("dp"));
                     listener.onQuoteReceived(ticker, c.get(), d.get(), dp.get());
 //
                     Log.d("getCHangeValuesttry", String.valueOf(c.get()));

@@ -8,6 +8,7 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
+import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.RecyclerView;
 
 import java.util.List;
@@ -46,13 +47,13 @@ public class FavoritesAdapter extends RecyclerView.Adapter<FavoritesAdapter.View
         holder.dp.setText(String.format(Locale.getDefault(), "( %.2f%% )", (item.getDP()))   );
 
 
-        if (item.getCurrentPrice() < 0) {
+        if (item.getD() < 0) {
             holder.d.setTextColor(Color.RED);
             holder.dp.setTextColor(Color.RED);
             holder.fvimageChangeIndicator.setImageResource(R.drawable.trending_down); // Set your down icon
         } else {
-            holder.d.setTextColor(Color.GREEN);
-            holder.dp.setTextColor(Color.GREEN);
+            holder.d.setTextColor(Color.parseColor("#489838"));
+            holder.dp.setTextColor(Color.parseColor("#489838"));
             holder.fvimageChangeIndicator.setImageResource(R.drawable.trending_up); // Set your up icon
         }
         // Set other views based on the item data

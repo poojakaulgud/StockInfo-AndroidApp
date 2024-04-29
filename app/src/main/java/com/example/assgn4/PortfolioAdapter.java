@@ -48,8 +48,8 @@ public class PortfolioAdapter extends RecyclerView.Adapter<PortfolioAdapter.View
             holder.dp.setTextColor(Color.RED);
             holder.imageChangeIndicator.setImageResource(R.drawable.trending_down); // Set your down icon
         } else {
-            holder.d.setTextColor(Color.GREEN);
-            holder.dp.setTextColor(Color.GREEN);
+            holder.d.setTextColor(Color.parseColor("#489838"));
+            holder.dp.setTextColor(Color.parseColor("#489838"));
             holder.imageChangeIndicator.setImageResource(R.drawable.trending_up); // Set your up icon
         }
         // Set other views based on the item data
