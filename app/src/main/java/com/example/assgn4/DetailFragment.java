@@ -1,14 +1,21 @@
 package com.example.assgn4;
 
 import android.graphics.Color;
+import android.graphics.drawable.ColorDrawable;
 import android.os.Bundle;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
+import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
 
+import androidx.appcompat.app.AlertDialog;
 import androidx.fragment.app.Fragment;
 import androidx.viewpager2.widget.ViewPager2;
 
@@ -35,14 +42,17 @@ public class DetailFragment extends Fragment {
     private final String BASE_URL = "https://assgn3-pooja.wl.r.appspot.com";
     public String sts;
     Double c;
+    int qty;
     TextView fragTicker;
     TextView fragDesc;
     TextView fragMarketValue;
     TextView fragd;
     TextView pfShares;
+    private double balance;
     TextView pfAvgCost;
     TextView pfTotalCost;
     TextView pfMarketValue;
+    TextView cash_to_buy, multiplier;
     TextView pfChange;
     TextView fragdp, fragh;
     TextView fragl;
@@ -51,6 +61,8 @@ public class DetailFragment extends Fragment {
     TextView ipo, industry, peers, weburl;
     TextView total_mspr, neg_mspr, pos_mspr, total_change, pos_change, neg_change;
     ImageView fragimageChangeIndicator;
+
+    Button Tradebutton;
 
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -71,9 +83,14 @@ public class DetailFragment extends Fragment {
             getDescription();
             getPeers();
             getInsider();
+            getWallet();
         } catch (Exception e) {
             Log.e("DetailFragment", "Error fetching data", e);
         }
+
+
+
+
     }
     public static DetailFragment newInstance(String selectedItem) {
         DetailFragment fragment = new DetailFragment();
@@ -113,7 +130,167 @@ public class DetailFragment extends Fragment {
         neg_change = view.findViewById(R.id.neg_change);
         pos_change = view.findViewById(R.id.pos_change);
 
-                ViewPager2 viewPager = view.findViewById(R.id.view_pager);
+
+
+        Tradebutton = view.findViewById(R.id.button_trade);
+
+        Tradebutton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                // Inflate the custom layout
+                LayoutInflater inflater = getLayoutInflater();
+                View dialogView = inflater.inflate(R.layout.dialog_trade_shares, null);
+
+                // Create the dialog using the custom view
+                AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
+                builder.setView(dialogView);
+
+                // Create and show the dialog
+                AlertDialog dialog = builder.create();
+                if (dialog.getWindow() != null) {
+                    dialog.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT)); // Makes background transparent
+                }
+                dialog.show();
+
+                // Find views within the dialog and set up click listeners or other interactions
+                Button buyButton = dialogView.findViewById(R.id.button_buy);
+                Button sellButton = dialogView.findViewById(R.id.button_sell);
+                EditText editText = dialogView.findViewById(R.id.shares_entered);
+                String valueString = editText.getText().toString();
+                final int[] value = {0};
+                if (!valueString.isEmpty()) {
+                    try {
+                        value[0] = Integer.parseInt(valueString);
+                    } catch (NumberFormatException e) {
+                        // Handle the exception if the string does not contain a parsable integer.
+                        Log.e("DetailFragment", "NumberFormatException: " + e.getMessage());
+                    }
+                }
+
+                cash_to_buy = dialogView.findViewById(R.id.cash_to_buy);
+                multiplier = dialogView.findViewById(R.id.multiplier);
+                cash_to_buy.setText(String.format(Locale.getDefault(), "$%.2f to buy %s", balance, sts));
+                multiplier.setText(String.format(Locale.getDefault(), "%d*$%.2f/share = %.2f", value[0],c, (value[0] *c)));
+
+                editText.addTextChangedListener(new TextWatcher() {
+                    @Override
+                    public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+                        // This method is called to notify you that, within s,
+                        // the count characters beginning at start are about to be replaced with new text with length after.
+                    }
+
+                    @Override
+                    public void onTextChanged(CharSequence s, int start, int before, int count) {
+                        // This method is called to notify you that, within s,
+                        // the count characters beginning at start have just replaced old text that had length before.
+                        // You can perform your action here that you want to do with every change in the EditText.
+                    }
+
+                    @Override
+                    public void afterTextChanged(Editable s) {
+
+                        if (!s.toString().isEmpty()) {
+                            try {
+                                value[0] = Integer.parseInt(s.toString());
+                                multiplier.setText(String.format(Locale.getDefault(), "%d*$%.2f/share = %.2f", value[0],c, (value[0] *c)));
+                            } catch (NumberFormatException e) {
+                                // Handle exception if string is not a valid integer
+                            }
+                        }
+                    }
+                });
+
+                // Set up click listeners for your buttons
+                buyButton.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View view) {
+                        if( value[0]<0){
+                            LayoutInflater inflater = LayoutInflater.from(view.getContext());
+                            View layout = inflater.inflate(R.layout.custom_toast_layout,null);
+
+                            TextView text = layout.findViewById(R.id.custom_toast_message);
+                            text.setText("Cannot buy non-positive shares");
+
+                            Toast toast = new Toast(view.getContext());
+                            toast.setDuration(Toast.LENGTH_SHORT);
+                            toast.setView(layout); // Set the custom layout to Toast
+                            toast.show();
+                        }
+                        else if((value[0] *c)>balance){
+                            LayoutInflater inflater = LayoutInflater.from(view.getContext());
+                            View layout = inflater.inflate(R.layout.custom_toast_layout,null);
+
+                            TextView text = layout.findViewById(R.id.custom_toast_message);
+                            text.setText("Not enough money to buy");
+
+                            Toast toast = new Toast(view.getContext());
+                            toast.setDuration(Toast.LENGTH_SHORT);
+                            toast.setView(layout); // Set the custom layout to Toast
+                            toast.show();
+                        }
+                        else{
+                            LayoutInflater inflater = LayoutInflater.from(view.getContext());
+                            View layout = inflater.inflate(R.layout.custom_toast_layout,null);
+
+                            TextView text = layout.findViewById(R.id.custom_toast_message);
+                            text.setText("Please enter a valid amount");
+
+                            Toast toast = new Toast(view.getContext());
+                            toast.setDuration(Toast.LENGTH_SHORT);
+                            toast.setView(layout); // Set the custom layout to Toast
+                            toast.show();
+                        }
+                    }
+                });
+
+                sellButton.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View view) {
+                        // Handle sell button click
+                        if( value[0]<0){
+                            LayoutInflater inflater = LayoutInflater.from(view.getContext());
+                            View layout = inflater.inflate(R.layout.custom_toast_layout,null);
+
+                            TextView text = layout.findViewById(R.id.custom_toast_message);
+                            text.setText("Cannot sell non-positive shares");
+
+                            Toast toast = new Toast(view.getContext());
+                            toast.setDuration(Toast.LENGTH_SHORT);
+                            toast.setView(layout); // Set the custom layout to Toast
+                            toast.show();
+                        }
+
+                        else if(value[0] > qty){
+                            LayoutInflater inflater = LayoutInflater.from(view.getContext());
+                            View layout = inflater.inflate(R.layout.custom_toast_layout,null);
+
+                            TextView text = layout.findViewById(R.id.custom_toast_message);
+                            text.setText("Not enough shares to sell");
+
+                            Toast toast = new Toast(view.getContext());
+                            toast.setDuration(Toast.LENGTH_SHORT);
+                            toast.setView(layout); // Set the custom layout to Toast
+                            toast.show();
+                        }
+                        else{
+                            LayoutInflater inflater = LayoutInflater.from(view.getContext());
+                            View layout = inflater.inflate(R.layout.custom_toast_layout,null);
+
+                            TextView text = layout.findViewById(R.id.custom_toast_message);
+                            text.setText("Please enter a valid amount");
+
+                            Toast toast = new Toast(view.getContext());
+                            toast.setDuration(Toast.LENGTH_SHORT);
+                            toast.setView(layout); // Set the custom layout to Toast
+                            toast.show();
+                        }
+                    }
+                });
+            }
+        });
+
+
+        ViewPager2 viewPager = view.findViewById(R.id.view_pager);
         TabLayout tabLayout = view.findViewById(R.id.tabs);
 
         // Create an instance of the ViewPagerAdapter
@@ -140,6 +317,34 @@ public class DetailFragment extends Fragment {
 
 
         return view;
+    }
+
+
+    private void getWallet() {
+        String url = BASE_URL + "/wallet";
+        JsonArrayRequest jsonArrayRequest = new JsonArrayRequest(Request.Method.GET, url, null,
+                response -> {
+                    try {
+                        // Assuming 'balance' is a field in your JSON object
+                        if (response.length() > 0) {
+                            JSONObject walletObject = response.getJSONObject(0);
+                            balance = walletObject.getDouble("balance");
+
+                            Log.d("WalletResponse", walletObject.toString());
+
+                        }
+
+
+//
+                    } catch (JSONException e) {
+                        Log.e("getWallet", "Error: " + e.toString());
+                        // Handle the case where 'balance' field is not in the response or there is a parsing error
+                    }
+                },
+                error -> {
+                    Log.e("getWallet", "Error: " + error.toString());
+                });
+        requestQueue.add(jsonArrayRequest);
     }
 
     private void getDescription(){
@@ -310,7 +515,7 @@ public class DetailFragment extends Fragment {
                     try {
 
                         JSONObject jsonObject = response;
-                        int qty = jsonObject.getInt("qty");
+                        qty = jsonObject.getInt("qty");
                         double total = jsonObject.getDouble("total_cost");
                         double avg = jsonObject.getDouble("avg_cost");
                         double curr_price = Math.round(((c-avg)*qty) * 100.0) / 100.0;
