@@ -35,6 +35,7 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import android.view.KeyEvent;
+import android.view.LayoutInflater;
 import android.view.View;
 import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputMethodManager;
@@ -221,6 +222,16 @@ public class MainActivity extends AppCompatActivity implements FavoritesAdapter.
                         @Override
                         public void onCompleted() {
                             starIcon.setImageResource(R.drawable.full_star);
+                            LayoutInflater inflater = LayoutInflater.from(MainActivity.this);
+                            View layout = inflater.inflate(R.layout.custom_toast_layout,null);
+
+                            TextView text = layout.findViewById(R.id.custom_toast_message);
+                            text.setText(d_symbol+ " added to Favorites");
+
+                            Toast toast = new Toast(MainActivity.this);
+                            toast.setDuration(Toast.LENGTH_SHORT);
+                            toast.setView(layout); // Set the custom layout to Toast
+                            toast.show();
                         }
                     });
                 }

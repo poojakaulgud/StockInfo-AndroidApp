@@ -1,6 +1,8 @@
 package com.example.assgn4;
 
+import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.Locale;
 import java.util.concurrent.TimeUnit;
 
 public class NewsItem {
@@ -61,5 +63,15 @@ public class NewsItem {
     public long getElapsedTimeInHours() {
         long currentTimestamp = System.currentTimeMillis() / 1000;  // Current time in seconds
         return TimeUnit.SECONDS.toHours(currentTimestamp - this.datetime);
+    }
+
+    public String getPublicationDate() {
+        Date date = new Date(datetime * 1000);
+
+        // Create a SimpleDateFormat instance with the desired format
+        SimpleDateFormat sdf = new SimpleDateFormat("MMMM dd, yyyy", Locale.ENGLISH);
+
+        // Format the date
+        return sdf.format(date);
     }
 }

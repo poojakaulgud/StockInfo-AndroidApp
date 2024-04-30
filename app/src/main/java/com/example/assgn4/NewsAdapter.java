@@ -2,12 +2,16 @@ package com.example.assgn4;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
+import android.content.Intent;
+import android.net.Uri;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
 
+import androidx.appcompat.app.AlertDialog;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.bumptech.glide.Glide;
@@ -17,12 +21,14 @@ import java.util.List;
 import java.util.Locale;
 
 public class NewsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
+    private DetailFragment context;
     private static final int TYPE_BIG = 0;
     private static final int TYPE_SMALL = 1;
     private List<NewsItem> newsItems;
 
-    public NewsAdapter(List<NewsItem> newsItems) {
+    public NewsAdapter(List<NewsItem> newsItems, DetailFragment context) {
         this.newsItems = newsItems;
+        this.context = context;
     }
 
     @Override
@@ -53,11 +59,66 @@ public class NewsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
     public void onBindViewHolder(RecyclerView.ViewHolder holder, int position) {
         NewsItem item = newsItems.get(position);
         Context context = holder.itemView.getContext();
+        holder.itemView.setOnClickListener(v -> {
+            showDialog(item, holder.itemView.getContext());
+        });
         if (getItemViewType(position) == TYPE_BIG) {
             ((BigNewsViewHolder) holder).bind(item, context);
         } else {
             ((SmallNewsViewHolder) holder).bind(item, context);
         }
+    }
+
+    private void showDialog(NewsItem item, Context context) {
+        AlertDialog.Builder builder = new AlertDialog.Builder(context);
+        View dialogView = LayoutInflater.from(context).inflate(R.layout.custom_news_dialog, null);
+        builder.setView(dialogView);
+
+        TextView tvTitle = dialogView.findViewById(R.id.articleTitle);
+        TextView tvSummary = dialogView.findViewById(R.id.articleSummary);
+        TextView tvSource = dialogView.findViewById(R.id.articleSourceName);
+        TextView tvDate = dialogView.findViewById(R.id.articleDate);
+        ImageView chrome = dialogView.findViewById(R.id.chrome);
+        ImageView twitter = dialogView.findViewById(R.id.twitter);
+        ImageView facebook = dialogView.findViewById(R.id.facebook);
+
+        chrome.setOnClickListener(view -> {
+            Uri webpage = Uri.parse(item.getUrl());
+            Intent intent = new Intent(Intent.ACTION_VIEW, webpage);
+            if (intent.resolveActivity(context.getPackageManager()) != null) {
+                context.startActivity(intent);
+            } else {
+                Toast.makeText(view.getContext(), "No application can handle this request.", Toast.LENGTH_LONG).show();
+            }
+        });
+
+        twitter.setOnClickListener(view -> {
+            Uri webpage = Uri.parse("https://twitter.com/intent/tweet?title=Check out this Link: "+"&url="+item.getUrl());
+            Intent intent = new Intent(Intent.ACTION_VIEW, webpage);
+            if (intent.resolveActivity(context.getPackageManager()) != null) {
+                context.startActivity(intent);
+            } else {
+                Toast.makeText(view.getContext(), "No application can handle this request.", Toast.LENGTH_LONG).show();
+            }
+        });
+
+        facebook.setOnClickListener(view -> {
+            Uri webpage = Uri.parse("https://www.facebook.com/sharer/sharer.php?u="+item.getUrl());
+            Intent intent = new Intent(Intent.ACTION_VIEW, webpage);
+            if (intent.resolveActivity(context.getPackageManager()) != null) {
+                context.startActivity(intent);
+            } else {
+                Toast.makeText(view.getContext(), "No application can handle this request.", Toast.LENGTH_LONG).show();
+            }
+        });
+
+        tvTitle.setText(item.getHeadline());
+        tvSummary.setText(item.getSummary());
+        tvSource.setText(item.getSource());
+        tvDate.setText(item.getPublicationDate()); // Format date as needed
+
+        AlertDialog dialog = builder.create();
+        dialog.show();
     }
 
 

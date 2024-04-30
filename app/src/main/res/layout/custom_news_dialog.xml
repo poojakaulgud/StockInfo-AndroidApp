@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@drawable/dialog_background"
+    android:orientation="vertical"
+    android:padding="16dp">
+
+    <TextView
+        android:id="@+id/articleSourceName"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="SeekingAlpha"
+        android:textStyle="bold"
+        android:textSize="26sp"/>
+
+    <TextView
+        android:id="@+id/articleDate"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="10dp"
+        android:paddingTop="4dp"
+        android:text="March 22, 2024"
+        android:textColor="#959393"
+        android:textSize="12sp"
+        android:textStyle="bold" />
+
+    <TextView
+        android:id="@+id/articleTitle"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@drawable/custom_bg"
+        android:text="United States Vs. Apple: The Winner Could Be You (Rating Upgrade)"
+        android:textStyle="bold"
+        android:textSize="16sp"
+        android:paddingTop="8dp"/>
+
+    <TextView
+        android:id="@+id/articleSummary"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="DOJ sues Apple Inc. for monopolistic practices; stock drops 15%. Could present a buying opportunity. Click for my AAPL update and a review of its antitrust issues."
+        android:scrollHorizontally="true"
+        android:ellipsize="end"
+        android:maxLines="10"
+        android:paddingTop="8dp"/>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:padding="20dp"
+        android:paddingTop="8dp">
+
+        <ImageView
+            android:id="@+id/chrome"
+            android:layout_width="50dp"
+            android:layout_height="50dp"
+            android:src="@drawable/chrome"
+            android:layout_gravity="start"
+            android:layout_marginStart="0dp"
+            android:contentDescription="chrome"/>
+
+        <ImageView
+            android:id="@+id/twitter"
+            android:layout_width="50dp"
+            android:layout_height="50dp"
+            android:layout_gravity="center_horizontal"
+            android:src="@drawable/twitter_x_icon"
+            android:contentDescription="twitter"
+            android:layout_marginStart="65dp"/>
+
+        <ImageView
+            android:id="@+id/facebook"
+            android:layout_width="50dp"
+            android:layout_height="50dp"
+            android:layout_gravity="end"
+            android:src="@drawable/facebook"
+            android:contentDescription="facebook"
+            android:layout_marginStart="60dp"/>
+    </LinearLayout>
+</LinearLayout>

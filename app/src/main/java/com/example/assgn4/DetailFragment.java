@@ -582,7 +582,7 @@ public class DetailFragment extends Fragment {
     }
 
     private void updateNewsUI(ArrayList<NewsItem> newsItems) {
-        newsAdapter = new NewsAdapter(newsItems);
+        newsAdapter = new NewsAdapter(newsItems, this);
         newsRecyclerView.setAdapter(newsAdapter);
     }
 
@@ -870,8 +870,8 @@ public class DetailFragment extends Fragment {
                     pfTotalCost.setText("$0.00");
                     pfAvgCost.setText("$0.00");
                     pfChange.setText("$0.00");
-                    pfChange.setTextColor(Color.parseColor("#FFFFFF"));
-                    pfMarketValue.setTextColor(Color.parseColor("#FFFFFF"));
+                    pfChange.setTextColor(Color.parseColor("#000000"));
+                    pfMarketValue.setTextColor(Color.parseColor("#000000"));
 
                 });
         requestQueue.add(jsonObjectRequest);

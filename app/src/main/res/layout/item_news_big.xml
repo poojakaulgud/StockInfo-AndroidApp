@@ -53,6 +53,9 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_gravity="bottom"
+            android:scrollHorizontally="true"
+            android:ellipsize="end"
+            android:maxLines="2"
             android:text="Big News Title"
 
             android:layout_marginHorizontal="20dp"
