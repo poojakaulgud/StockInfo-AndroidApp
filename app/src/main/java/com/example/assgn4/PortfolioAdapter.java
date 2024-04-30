@@ -16,13 +16,19 @@ import java.util.Locale;
 public class PortfolioAdapter extends RecyclerView.Adapter<PortfolioAdapter.ViewHolder> {
     private final List<PortfolioItem> portfolioItems;
 
-    public PortfolioAdapter(List<PortfolioItem> portfolioItems) {
+    public interface OnPfItemClickListener {
+        void onPfItemClick(String displaySymbol);
+    }
+
+    public PortfolioAdapter(List<PortfolioItem> portfolioItems, OnPfItemClickListener listener) {
         this.portfolioItems = portfolioItems;
+        this.listener = listener;
     }
 
     public List<PortfolioItem> getItems() {
         return portfolioItems;
     }
+    private OnPfItemClickListener listener;
 
     @NonNull
     @Override
@@ -41,7 +47,13 @@ public class PortfolioAdapter extends RecyclerView.Adapter<PortfolioAdapter.View
         holder.d.setText(String.format(Locale.getDefault(), " $%.2f ", (curr_price)));
 //        holder.dp.setText(String.valueOf((Math.round((curr_price/item.getTotalCost())*100) * 100) / 100)    );
         holder.dp.setText(String.format(Locale.getDefault(), "( %.2f%% )", (curr_price / item.getTotalCost()) * 100)   );
-
+        holder.pf_arrow.setOnClickListener(new View.OnClickListener(){
+            @Override
+            public void onClick(View v) {
+                // Delegate the click event to the listener
+                listener.onPfItemClick(item.getTicker());
+            }
+        });
 
         if (curr_price < 0) {
             holder.d.setTextColor(Color.RED);
@@ -66,7 +78,7 @@ public class PortfolioAdapter extends RecyclerView.Adapter<PortfolioAdapter.View
         TextView tvMarketValue;
         TextView d;
         TextView dp;
-        ImageView imageChangeIndicator;
+        ImageView imageChangeIndicator,  pf_arrow;
         // Define other views
 
         public ViewHolder(@NonNull View itemView) {
@@ -77,6 +89,8 @@ public class PortfolioAdapter extends RecyclerView.Adapter<PortfolioAdapter.View
             d = itemView.findViewById(R.id.tvPriceChangeValue);
             dp = itemView.findViewById(R.id.tvPriceChangePercentage);
             imageChangeIndicator = itemView.findViewById(R.id.imageChangeIndicator);
+
+            pf_arrow = itemView.findViewById(R.id.pf_right_arrow);
 
             // Initialize other views
         }

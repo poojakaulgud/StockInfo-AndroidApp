@@ -81,8 +81,16 @@
                 android:textSize="14sp" />
         </LinearLayout>
 
-
     </LinearLayout>
+
+
+    <ImageView
+        android:id="@+id/fav_right_arrow"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:src="@drawable/right_arrow" />
+
 
 
 </LinearLayout>

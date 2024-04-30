@@ -58,7 +58,7 @@ import java.util.Locale;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicReference;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements FavoritesAdapter.OnItemClickListener, PortfolioAdapter.OnPfItemClickListener {
     String[] autoCompleteArray;
     private RecyclerView stocksRecyclerView;
     private StockAdapter stocksAdapter;
@@ -585,7 +585,7 @@ public class MainActivity extends AppCompatActivity {
 
     private void updateFavoriteUI(ArrayList<FavoriteItem> favoriteItems) {
         RecyclerView recyclerView = findViewById(R.id.favoritesRecyclerView);
-        FavoritesAdapter f_adapter = new FavoritesAdapter(favoriteItems);
+        FavoritesAdapter f_adapter = new FavoritesAdapter(favoriteItems, this);
         recyclerView.setAdapter(f_adapter);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
         setupFavoriteTouchHelper(recyclerView, favoriteItems, f_adapter);
@@ -827,11 +827,99 @@ public class MainActivity extends AppCompatActivity {
         TextView NetWorth = findViewById(R.id.networth);
         NetWorth.setText(String.format(Locale.getDefault(), "$%.2f", finalNetWorth));
         RecyclerView recyclerView = findViewById(R.id.recyclerView);
-        PortfolioAdapter p_adapter = new PortfolioAdapter(portfolioItems);
+        PortfolioAdapter p_adapter = new PortfolioAdapter(portfolioItems, this);
         recyclerView.setAdapter(p_adapter);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
         setupItemTouchHelper(recyclerView, portfolioItems, p_adapter);
 
+    }
+
+    @Override
+    public void onItemClick(String displaySymbol) {
+        TextView tickerTextView = findViewById(R.id.tickerTextView);
+        TextView titleTextView = findViewById(R.id.titleTextView);
+        searchIcon.setVisibility(View.GONE);
+        backIcon.setVisibility(View.VISIBLE);
+        crossIcon.setVisibility(View.GONE);// Extract displaySymbol
+        actv.setText(displaySymbol);  // Set only the displaySymbol as the text
+        actv.setSelection(displaySymbol.length());
+        d_symbol = displaySymbol;
+        actv.setVisibility(View.GONE);
+        starIcon.setVisibility(View.VISIBLE);
+        isFavorite(displaySymbol, new Callback() {
+            @Override
+            public void onCompleted() {
+                if(flagFavorite){
+                    starIcon.setImageResource(R.drawable.full_star);
+                }
+                else{
+                    starIcon.setImageResource(R.drawable.star_border);
+                }
+            }
+        });
+
+        tickerTextView.setVisibility(View.VISIBLE);
+        tickerTextView.setText(displaySymbol);
+        titleTextView.setVisibility(View.GONE);
+
+
+        FragmentManager fragmentManager = getSupportFragmentManager();
+        FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
+
+        DetailFragment detailFragment = DetailFragment.newInstance(displaySymbol);
+
+        fragmentTransaction.replace(R.id.homePage, detailFragment);
+
+
+        fragmentTransaction.addToBackStack(null);
+
+        fragmentTransaction.commit();
+        LinearLayout homePageContent = findViewById(R.id.homePageContent);
+        homePageContent.setVisibility(View.GONE);
+    }
+
+    @Override
+    public void onPfItemClick(String displaySymbol) {
+        TextView tickerTextView = findViewById(R.id.tickerTextView);
+        TextView titleTextView = findViewById(R.id.titleTextView);
+        searchIcon.setVisibility(View.GONE);
+        backIcon.setVisibility(View.VISIBLE);
+        crossIcon.setVisibility(View.GONE);// Extract displaySymbol
+        actv.setText(displaySymbol);  // Set only the displaySymbol as the text
+        actv.setSelection(displaySymbol.length());
+        d_symbol = displaySymbol;
+        actv.setVisibility(View.GONE);
+        starIcon.setVisibility(View.VISIBLE);
+        isFavorite(displaySymbol, new Callback() {
+            @Override
+            public void onCompleted() {
+                if(flagFavorite){
+                    starIcon.setImageResource(R.drawable.full_star);
+                }
+                else{
+                    starIcon.setImageResource(R.drawable.star_border);
+                }
+            }
+        });
+
+        tickerTextView.setVisibility(View.VISIBLE);
+        tickerTextView.setText(displaySymbol);
+        titleTextView.setVisibility(View.GONE);
+
+
+        FragmentManager fragmentManager = getSupportFragmentManager();
+        FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
+
+        DetailFragment detailFragment = DetailFragment.newInstance(displaySymbol);
+
+        fragmentTransaction.replace(R.id.homePage, detailFragment);
+
+
+        fragmentTransaction.addToBackStack(null);
+
+        fragmentTransaction.commit();
+        LinearLayout homePageContent = findViewById(R.id.homePageContent);
+        homePageContent.setVisibility(View.GONE);
     }
 
 

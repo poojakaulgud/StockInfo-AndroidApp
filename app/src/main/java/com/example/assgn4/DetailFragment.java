@@ -4,7 +4,11 @@ import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
 import android.os.Bundle;
 import android.text.Editable;
+import android.text.SpannableString;
+import android.text.Spanned;
 import android.text.TextWatcher;
+import android.text.method.LinkMovementMethod;
+import android.text.style.ClickableSpan;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -17,6 +21,8 @@ import android.widget.Toast;
 
 import androidx.appcompat.app.AlertDialog;
 import androidx.fragment.app.Fragment;
+import androidx.fragment.app.FragmentManager;
+import androidx.fragment.app.FragmentTransaction;
 import androidx.viewpager2.widget.ViewPager2;
 
 import com.android.volley.Request;
@@ -44,6 +50,8 @@ public class DetailFragment extends Fragment {
     public String description;
     private final String BASE_URL = "https://assgn3-pooja.wl.r.appspot.com";
     public String sts;
+    String fullString;
+    SpannableString spannableString;
     double c, total, avg, curr_price;
     int qty;
     TextView fragTicker;
@@ -84,7 +92,40 @@ public class DetailFragment extends Fragment {
                 }
             });
             getDescription();
-            getPeers();
+            getPeers(new Callback() {
+                @Override
+                public void onCompleted() {
+                    String[] values = fullString.split(", ");
+                    int startIndex = 0;
+                    for (final String cmpny : values) {
+                        int endIndex = startIndex + cmpny.length();
+
+                        // Make sure to import android.text.style.ClickableSpan
+                        ClickableSpan clickableSpan = new ClickableSpan() {
+                            @Override
+                            public void onClick(View textView) {
+                                Log.d("click", cmpny);
+                                DetailFragment fragment = DetailFragment.newInstance(cmpny);
+                                FragmentManager fragmentManager = getParentFragmentManager(); // or getFragmentManager() in older APIs or within a Fragment
+                                FragmentTransaction transaction = fragmentManager.beginTransaction();
+                                transaction.replace(R.id.homePage, fragment); // 'fragment_container' is the ID of your container in the layout
+                                transaction.commit();
+
+                            }
+                        };
+
+                        spannableString.setSpan(clickableSpan, startIndex, endIndex, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+
+                        // Update startIndex for next value (considering the comma)
+                        startIndex = endIndex + 1; // +1 for the comma
+                    }
+
+                    peers.setText(spannableString);
+                    peers.setMovementMethod(LinkMovementMethod.getInstance());
+
+                }
+            });
+
             getInsider();
             getWallet();
         } catch (Exception e) {
@@ -636,7 +677,7 @@ public class DetailFragment extends Fragment {
         requestQueue.add(jsonObjectRequest);
     }
 
-    private void getPeers(){
+    private void getPeers(Callback callback){
         String url = BASE_URL + "/peers/" + sts;
         JsonArrayRequest jsonArrayRequest = new JsonArrayRequest(Request.Method.GET, url, null,
                 response -> {
@@ -650,13 +691,17 @@ public class DetailFragment extends Fragment {
 
                             str.append(res_peer).append(", ");
                         }
-                        peers.setText(str);
+                        fullString = str.toString();
+                        spannableString = new SpannableString(fullString);
+
 
                         Log.d("getPeers", response.toString());
                     } catch (Exception e) {
                         throw new RuntimeException(e);
                     }
-
+                    if (callback != null) {
+                        callback.onCompleted();
+                    }
                 },
                 error -> {
                     Log.e("getPeers", "Error: " + error.toString());
