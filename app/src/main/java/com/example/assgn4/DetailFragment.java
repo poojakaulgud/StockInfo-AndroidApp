@@ -23,6 +23,8 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentTransaction;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 import androidx.viewpager2.widget.ViewPager2;
 
 import com.android.volley.Request;
@@ -33,6 +35,7 @@ import com.android.volley.toolbox.JsonArrayRequest;
 import com.android.volley.toolbox.JsonObjectRequest;
 import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
+import com.bumptech.glide.Glide;
 import com.google.android.material.tabs.TabLayout;
 import com.google.android.material.tabs.TabLayoutMediator;
 
@@ -47,6 +50,8 @@ import java.util.concurrent.atomic.AtomicReference;
 
 public class DetailFragment extends Fragment {
     private RequestQueue requestQueue;
+    private RecyclerView newsRecyclerView;
+    private NewsAdapter newsAdapter;
     public String description;
     private final String BASE_URL = "https://assgn3-pooja.wl.r.appspot.com";
     public String sts;
@@ -125,7 +130,7 @@ public class DetailFragment extends Fragment {
 
                 }
             });
-
+            getNews();
             getInsider();
             getWallet();
         } catch (Exception e) {
@@ -173,6 +178,12 @@ public class DetailFragment extends Fragment {
         total_change = view.findViewById(R.id.total_change);
         neg_change = view.findViewById(R.id.neg_change);
         pos_change = view.findViewById(R.id.pos_change);
+
+
+
+        newsRecyclerView = view.findViewById(R.id.newsRecyclerView);
+
+        newsRecyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
 
 
 
@@ -388,12 +399,12 @@ public class DetailFragment extends Fragment {
         }).attach();
 
 
-        TextView textView = view.findViewById(R.id.detail_text);
-        textView.setText(sts);
 
 
         return view;
     }
+
+
 
     public void showCongratulationsDialog(String action, int shares) {
         AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
@@ -525,6 +536,54 @@ public class DetailFragment extends Fragment {
                 }
         );
         requestQueue.add(jsonObjectRequest);
+    }
+
+    private void getNews(){
+        String api_url = BASE_URL + "/news/"+sts;
+        JsonArrayRequest jsonArrayRequest = new JsonArrayRequest(Request.Method.GET, api_url, null,
+                response -> {
+                    try {
+                        ArrayList<NewsItem> newsItems = new ArrayList<>();
+
+                        for (int i = 0; i < response.length(); i++) {
+                            JSONObject newsObject = response.getJSONObject(i);
+                            String headline = newsObject.getString("headline");
+                            String summary = newsObject.getString("summary");
+                            String source = newsObject.getString("source");
+                            long datetime = newsObject.getLong("datetime");
+                            String url = newsObject.getString("url");
+                            String imageUrl = newsObject.getString("image");
+                                NewsItem item = new NewsItem(
+                                        headline,
+                                        summary,
+                                        imageUrl,
+                                        url,
+                                        source,
+                                        datetime
+                                );
+                                newsItems.add(item);
+                                Log.d("NewsItem", item.toString());
+//                            Log.d("NewsItemResponse", response.toString());
+                                if (newsItems.size() == response.length()) {
+                                    // All items have been processed, update UI here
+                                    updateNewsUI(newsItems);
+                                }
+                        }
+                        Log.d("NewsResponse", newsItems.toString());
+                    } catch (Exception e) {
+                        throw new RuntimeException(e);
+                    }
+
+                },
+                error -> {
+                    Log.e("getFavorite", "Error: " + error.toString());
+                });
+        requestQueue.add(jsonArrayRequest);
+    }
+
+    private void updateNewsUI(ArrayList<NewsItem> newsItems) {
+        newsAdapter = new NewsAdapter(newsItems);
+        newsRecyclerView.setAdapter(newsAdapter);
     }
 
     private void updatePortfolio(int shares, String action){
