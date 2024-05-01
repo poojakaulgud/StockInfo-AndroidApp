@@ -2,6 +2,7 @@ package com.example.assgn4;
 
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
+import android.os.Build;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.SpannableString;
@@ -13,6 +14,10 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.webkit.ConsoleMessage;
+import android.webkit.WebChromeClient;
+import android.webkit.WebView;
+import android.webkit.WebViewClient;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageView;
@@ -66,6 +71,8 @@ public class DetailFragment extends Fragment {
     TextView pfShares;
     private double balance;
     TextView pfAvgCost;
+
+    WebView webview;
     TextView pfTotalCost;
     TextView pfMarketValue;
     TextView cash_to_buy, multiplier;
@@ -74,6 +81,7 @@ public class DetailFragment extends Fragment {
     TextView fragl;
     TextView frago;
     TextView fragpc;
+    private WebAppInterface mWebAppInterface;
     TextView ipo, industry, peers, weburl;
     TextView total_mspr, neg_mspr, pos_mspr, total_change, pos_change, neg_change;
     ImageView fragimageChangeIndicator;
@@ -97,6 +105,7 @@ public class DetailFragment extends Fragment {
                 }
             });
             getDescription();
+
             getPeers(new Callback() {
                 @Override
                 public void onCompleted() {
@@ -178,6 +187,56 @@ public class DetailFragment extends Fragment {
         total_change = view.findViewById(R.id.total_change);
         neg_change = view.findViewById(R.id.neg_change);
         pos_change = view.findViewById(R.id.pos_change);
+        webview = view.findViewById(R.id.webview);
+
+        webview.getSettings().setJavaScriptEnabled(true);
+        mWebAppInterface = new WebAppInterface(getActivity(), webview);
+        webview.addJavascriptInterface(mWebAppInterface, "Android");
+        webview.loadUrl("file:///android_asset/highcharts.html");
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+            WebView.setWebContentsDebuggingEnabled(true);
+        }
+        webview.setWebChromeClient(new WebChromeClient() {
+
+
+            @Override
+            public boolean onConsoleMessage(ConsoleMessage consoleMessage) {
+                String logMsg = consoleMessage.message() + " -- From line "
+                        + consoleMessage.lineNumber() + " of "
+                        + consoleMessage.sourceId();
+
+                switch (consoleMessage.messageLevel()) {
+                    case ERROR:
+                        Log.e("MyApplication", "ERROR: " + logMsg);
+                        break;
+                    case WARNING:
+                        Log.w("MyApplication", "WARNING: " + logMsg);
+                        break;
+                    case LOG:
+                        Log.i("MyApplication", "LOG: " + logMsg);
+                        break;
+                    case DEBUG:
+                        Log.d("MyApplication", "DEBUG: " + logMsg);
+                        break;
+                    case TIP:
+                        Log.i("MyApplication", "TIP: " + logMsg);
+                        break;
+                    default:
+                        Log.v("MyApplication", logMsg);
+                }
+                return super.onConsoleMessage(consoleMessage);
+            }
+        });
+
+        webview.setWebViewClient(new WebViewClient() {
+            @Override
+            public void onPageFinished(WebView view, String url) {
+                super.onPageFinished(view, url);
+                // WebView content loaded, safe to make calls
+                updateChartWithTicker(sts);
+            }
+        });
+
 
 
 
@@ -402,6 +461,14 @@ public class DetailFragment extends Fragment {
 
 
         return view;
+    }
+    public void updateChartWithTicker(String ticker) {
+        if (webview != null) {
+            Log.d("WebView Debuggggggggggggg", "WebView is properly initialized");
+            mWebAppInterface.sendTickerToJavaScript(ticker);
+        } else {
+            Log.e("WebView Debuggggggggggggggg", "WebView is not initialized");
+        }
     }
 
 

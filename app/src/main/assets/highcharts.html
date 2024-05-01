@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Highcharts Example</title>
+    <script src="https://code.highcharts.com/highcharts.js"></script>
+    <script src="https://code.highcharts.com/modules/exporting.js"></script>
+    <script src="https://code.highcharts.com/modules/export-data.js"></script>
+    <script src="https://code.highcharts.com/modules/accessibility.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script language="JavaScript">
+        path = "https://assgn3-pooja.wl.r.appspot.com";
+        function fetchDataFromServer(ticker) {
+            axios.get(path+`/recommendation/`+ticker).then((response) => {
+                    console.log('Here');
+                    console.log(JSON.stringify(response.data, null, 2))
+                    var recommendationTrends = response.data;
+                    console.log(recommendationTrends);
+
+                    if(JSON.stringify(recommendationTrends)==='{}'){
+                        console.log('Object Empty') ;
+                        const errorBlock = document.querySelector('.errorBlock');
+                        errorBlock.style.display = 'block';
+                    }
+                    else{
+                        console.log('recommendationTrends',recommendationTrends);
+                        addRecommendationTrends(recommendationTrends);
+                    }
+                }).catch((error) => {
+                    console.error('Error:', JSON.stringify(error, null, 2));
+                });
+        }
+
+        function addRecommendationTrends(recommendation_data){
+        var dates = [];
+        var strong_buy = [];
+        var buy = [];
+        var hold = [];
+        var sell = [];
+        var strong_sell = [];
+        var rec_chart_data = {};
+
+        recommendation_data.forEach(function (object) {
+            dates.push(object['period']);
+            strong_buy.push(object['strongBuy']);
+            buy.push(object['buy']);
+            hold.push(object['hold']);
+            sell.push(object['sell']);
+            strong_sell.push(object['strongSell']);
+        });
+        rec_chart_data['dates'] = dates;
+        rec_chart_data['strong_buy'] = strong_buy;
+        rec_chart_data['buy'] = buy;
+        rec_chart_data['hold'] = hold;
+        rec_chart_data['sell'] = sell;
+        rec_chart_data['strong_sell'] = strong_sell;
+        console.log("rec_chart_data", JSON.stringify(rec_chart_data, null, 2));
+        addRecChart(rec_chart_data);
+
+        }
+
+        function addRecChart(rec_chart_data){
+            Highcharts.chart('container',{
+                chart: {
+                  type: "column",
+                },
+                title: {
+                  text: "Recommendation Trends"
+                },
+                xAxis: {
+                  categories: rec_chart_data.dates,
+                },
+                scrollbar: {
+                  enabled: false
+                },
+                yAxis: {
+                  min: 0,
+                  title: {
+                    text: '#Analysis',
+                  },
+                  labels: {
+                    overflow: 'justify'
+                  }
+                },
+                plotOptions: {
+                  column: {
+                    dataLabels: {
+                      enabled: true
+                    }
+                  },
+                  series: {
+                    stacking: 'normal'
+                  }
+                },
+                series: [{
+                  type: 'column',
+                  name: 'Strong Buy',
+                  data: rec_chart_data.strong_buy,
+                  color: '#114f0e'
+                },
+                {
+                  type: 'column',
+                  name: 'Buy',
+                  data: rec_chart_data.buy,
+                  color: '#429418'
+                },
+                {
+                  type: 'column',
+                  name: 'Hold',
+                  data: rec_chart_data.hold,
+                  color: '#947518',
+                },
+                {
+                  type: 'column',
+                  name: 'Sell',
+                  data: rec_chart_data.sell,
+                  color: '#d13058',
+                },
+                {
+                  type: 'column',
+                  name: 'Strong Sell',
+                  data: rec_chart_data.strong_sell,
+                  color: '#591e0c',
+                }]
+              });
+        }
+    </script>
+</head>
+<body>
+<div id="container" style="width:100%; height:400px;"></div>
+
+</body>
+</html>
