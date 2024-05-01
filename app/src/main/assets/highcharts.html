@@ -69,6 +69,13 @@
                 xAxis: {
                   categories: rec_chart_data.dates,
                 },
+                legend: {
+                        layout: 'horizontal',
+                        align: 'center',
+                        verticalAlign: 'bottom',
+                        floating: false,
+                        itemDistance: 10
+                    },
                 scrollbar: {
                   enabled: false
                 },
@@ -77,6 +84,12 @@
                   title: {
                     text: '#Analysis',
                   },
+                  stackLabels: {
+                    enabled: true,
+                    style: {
+                        color: '#FFFFFF'
+                    }
+                  },
                   labels: {
                     overflow: 'justify'
                   }
@@ -84,7 +97,7 @@
                 plotOptions: {
                   column: {
                     dataLabels: {
-                      enabled: true
+                      enabled: false
                     }
                   },
                   series: {
