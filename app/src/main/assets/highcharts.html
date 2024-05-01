@@ -12,9 +12,9 @@
         function fetchDataFromServer(ticker) {
             axios.get(path+`/recommendation/`+ticker).then((response) => {
                     console.log('Here');
-                    console.log(JSON.stringify(response.data, null, 2))
+<!--                    console.log(JSON.stringify(response.data, null, 2))-->
                     var recommendationTrends = response.data;
-                    console.log(recommendationTrends);
+<!--                    console.log(recommendationTrends);-->
 
                     if(JSON.stringify(recommendationTrends)==='{}'){
                         console.log('Object Empty') ;
@@ -53,7 +53,7 @@
         rec_chart_data['hold'] = hold;
         rec_chart_data['sell'] = sell;
         rec_chart_data['strong_sell'] = strong_sell;
-        console.log("rec_chart_data", JSON.stringify(rec_chart_data, null, 2));
+<!--        console.log("rec_chart_data", JSON.stringify(rec_chart_data, null, 2));-->
         addRecChart(rec_chart_data);
 
         }

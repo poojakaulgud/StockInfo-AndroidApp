@@ -72,7 +72,7 @@ public class DetailFragment extends Fragment {
     private double balance;
     TextView pfAvgCost;
 
-    WebView webview;
+    WebView webview, historical_webview;
     TextView pfTotalCost;
     TextView pfMarketValue;
     TextView cash_to_buy, multiplier;
@@ -81,7 +81,7 @@ public class DetailFragment extends Fragment {
     TextView fragl;
     TextView frago;
     TextView fragpc;
-    private WebAppInterface mWebAppInterface;
+    private WebAppInterface mWebAppInterface, historicalWebAppInterface;
     TextView ipo, industry, peers, weburl;
     TextView total_mspr, neg_mspr, pos_mspr, total_change, pos_change, neg_change;
     ImageView fragimageChangeIndicator;
@@ -187,16 +187,25 @@ public class DetailFragment extends Fragment {
         total_change = view.findViewById(R.id.total_change);
         neg_change = view.findViewById(R.id.neg_change);
         pos_change = view.findViewById(R.id.pos_change);
-        webview = view.findViewById(R.id.webview);
+        webview = view.findViewById(R.id.rec_webview);
+        historical_webview = view.findViewById(R.id.historical_webview);
 
         webview.getSettings().setJavaScriptEnabled(true);
+        historical_webview.getSettings().setJavaScriptEnabled(true);
+
         mWebAppInterface = new WebAppInterface(getActivity(), webview);
+        historicalWebAppInterface = new WebAppInterface(getActivity(), historical_webview);
+
         webview.addJavascriptInterface(mWebAppInterface, "Android");
+        historical_webview.addJavascriptInterface(historicalWebAppInterface, "Android");
+
         webview.loadUrl("file:///android_asset/highcharts.html");
+        historical_webview.loadUrl("file:///android_asset/historical_highcharts.html");
+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
             WebView.setWebContentsDebuggingEnabled(true);
         }
-        webview.setWebChromeClient(new WebChromeClient() {
+        historical_webview.setWebChromeClient(new WebChromeClient() {
 
 
             @Override
@@ -225,6 +234,15 @@ public class DetailFragment extends Fragment {
                         Log.v("MyApplication", logMsg);
                 }
                 return super.onConsoleMessage(consoleMessage);
+            }
+        });
+
+        historical_webview.setWebViewClient(new WebViewClient() {
+            @Override
+            public void onPageFinished(WebView view, String url) {
+                super.onPageFinished(view, url);
+                // WebView content loaded, safe to make calls
+                updateHistoricalChartWithTicker(sts);
             }
         });
 
@@ -466,6 +484,15 @@ public class DetailFragment extends Fragment {
         if (webview != null) {
             Log.d("WebView Debuggggggggggggg", "WebView is properly initialized");
             mWebAppInterface.sendTickerToJavaScript(ticker);
+        } else {
+            Log.e("WebView Debuggggggggggggggg", "WebView is not initialized");
+        }
+    }
+
+    public void updateHistoricalChartWithTicker(String ticker) {
+        if (webview != null) {
+            Log.d("WebView Debuggggggggggggg", "WebView is properly initialized");
+            historicalWebAppInterface.sendTickerToJavaScript(ticker);
         } else {
             Log.e("WebView Debuggggggggggggggg", "WebView is not initialized");
         }
