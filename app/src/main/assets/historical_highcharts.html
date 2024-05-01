@@ -65,7 +65,7 @@
                   opposite: false,
                   labels: {
                     formatter: function () {
-                      return 'Surprise: ' + this.value;
+                      return 'Surprise: ' + parseFloat(this.value).toFixed(2);
                     }
                   },
                   lineWidth: 0,
