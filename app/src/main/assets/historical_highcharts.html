@@ -57,26 +57,15 @@
                 title: {
                   text: "Historical EPS Surprises"
                 },
-                xAxis: [{
-                  categories: earnings_chart_data.dates,
-                }, {
-                  categories: earnings_chart_data.surprise,
-                  linkedTo: 0,
-                  opposite: false,
-                  labels: {
-                    formatter: function () {
-                      return 'Surprise: ' + parseFloat(this.value).toFixed(2);
+                xAxis: {
+                    categories: earnings_chart_data.dates.map((date, index) => {
+                        return `${date}<br>Surprise: ${earnings_chart_data.surprise[index]}`;
+                    }),
+                    labels: {
+                        rotation: -45,
+                        align: 'right',
                     }
-                  },
-                  lineWidth: 0,
-                  minorTickLength: 0,
-                  tickLength: 0,
-                  gridLineWidth: 0,
-                  title: {
-                    text: null
-                  },
-                  offset: 15
-                }],
+                },
                 scrollbar: {
                   enabled: false
                 },
@@ -86,6 +75,9 @@
                   title: {
                     text: 'Quarterly EPS',
                   },
+                },
+                tooltip:{
+                  shared: true
                 },
                 series: [{
                   type: 'spline',

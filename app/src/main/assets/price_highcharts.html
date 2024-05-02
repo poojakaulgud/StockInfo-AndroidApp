@@ -40,7 +40,12 @@
                     text: ticker + " Hourly Price Variation"
                   },
                   xAxis: {
-                    type: 'datetime'
+                    type: 'datetime',
+                     crosshair: {
+                        width: 1,
+                        color: '#BDBDBD',
+                        dashStyle: 'solid'
+                    }
                   },
                   scrollbar: {
                     enabled: true
