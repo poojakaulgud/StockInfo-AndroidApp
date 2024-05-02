@@ -28,6 +28,7 @@ import android.util.Log;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentTransaction;
+import androidx.lifecycle.ViewModelProvider;
 import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -68,6 +69,7 @@ public class MainActivity extends AppCompatActivity implements FavoritesAdapter.
     boolean flagFavorite = false;
     ImageView searchIcon, backIcon, crossIcon, starIcon;
     AutoCompleteTextView actv;
+    private SharedViewModel viewModel;
 
     TextView titleTextView;
     private final String BASE_URL = "https://assgn3-pooja.wl.r.appspot.com";
@@ -78,6 +80,8 @@ public class MainActivity extends AppCompatActivity implements FavoritesAdapter.
 
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        viewModel = new ViewModelProvider(this).get(SharedViewModel.class);
+
 
 //        NavController navController = Navigation.findNavController(this, R.id.nav_host_fragment_content_main);
 
@@ -412,6 +416,8 @@ public class MainActivity extends AppCompatActivity implements FavoritesAdapter.
         }
     }
 
+
+
     private void deleteFavorite(String ticker, Callback callback){
         String url = BASE_URL + "/watchlist/" + ticker;
         StringRequest deleteRequest = new StringRequest(Request.Method.DELETE, url,
@@ -739,6 +745,7 @@ public class MainActivity extends AppCompatActivity implements FavoritesAdapter.
         JsonArrayRequest jsonArrayRequest = new JsonArrayRequest(Request.Method.GET, url, null,
                 response -> {
                     try {
+
                         ArrayList<PortfolioItem> portfolioItems = new ArrayList<>();
                         final double[] netWorthContainer = new double[1];
 
@@ -779,12 +786,20 @@ public class MainActivity extends AppCompatActivity implements FavoritesAdapter.
 
                             Log.d("portfolioobject", String.valueOf(portfolioObject));
 
+
+                            Log.d("PortfolioResponse", portfolioItems.toString());
+                        }
+                        Log.d("My new PortfolioResponse", response.toString());
+                        if(response.toString().equals("[]")){
+                            RecyclerView recyclerView = findViewById(R.id.recyclerView);
+                            recyclerView.setVisibility(View.GONE);
+                        }else{
+                            RecyclerView recyclerView = findViewById(R.id.recyclerView);
+                            recyclerView.setVisibility(View.VISIBLE);
                         }
 
-
-
-                        Log.d("PortfolioResponse", portfolioItems.toString());
                     } catch (Exception e) {
+                        Log.d("Iam here", String.valueOf(e));
                         throw new RuntimeException(e);
                     }
 

@@ -459,6 +459,7 @@ public class DetailFragment extends Fragment {
                             toast.show();
                         }
                         else if((qty-value[0])==0){
+                            Log.d("HEREEEEEEEEEDELETE", String.valueOf(value[0]));
                             deletePortfolio(value[0]);
                             dialog.dismiss();
                         }
@@ -984,7 +985,7 @@ public class DetailFragment extends Fragment {
 
                 },
                 error -> {
-                    Log.e("getPortfolio", "Error: " + error.toString());
+                    Log.e("getPortfolioDF", "Error: " + error.toString());
                     qty = 0;
                     pfShares.setText(String.valueOf(qty));
                     pfMarketValue.setText("$0.00");

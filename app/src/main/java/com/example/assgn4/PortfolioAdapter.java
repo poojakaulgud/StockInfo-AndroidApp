@@ -1,6 +1,7 @@
 package com.example.assgn4;
 
 import android.graphics.Color;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -39,6 +40,7 @@ public class PortfolioAdapter extends RecyclerView.Adapter<PortfolioAdapter.View
 
     @Override
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
+        Log.d("InsidePfAdapter",portfolioItems.toString());
         PortfolioItem item = portfolioItems.get(position);
         holder.tvStockSymbol.setText(item.getTicker());
         holder.Shares.setText(item.getQty());

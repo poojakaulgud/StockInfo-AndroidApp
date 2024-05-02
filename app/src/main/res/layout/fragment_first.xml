@@ -122,8 +122,9 @@
                     android:layout_height="wrap_content"
                     android:layout_below="@id/view_pager"
                     android:background="@color/white"
-                    app:tabIndicatorColor="#0D50C6"
+                    app:tabIndicatorColor="#0000FF"
                     app:tabIndicatorFullWidth="true"
+                    app:tabIconTint="@drawable/tab_color"
                     app:tabSelectedTextColor="@android:color/holo_blue_light"
                     app:tabTextColor="@android:color/darker_gray">
 
