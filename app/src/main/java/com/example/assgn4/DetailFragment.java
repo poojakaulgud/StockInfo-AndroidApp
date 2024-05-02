@@ -1,5 +1,6 @@
 package com.example.assgn4;
 
+import android.content.Context;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
 import android.os.Build;
@@ -24,6 +25,8 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
@@ -32,6 +35,7 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.viewpager2.widget.ViewPager2;
 
+import com.android.volley.DefaultRetryPolicy;
 import com.android.volley.Request;
 import com.android.volley.RequestQueue;
 import com.android.volley.Response;
@@ -119,11 +123,14 @@ public class DetailFragment extends Fragment {
                             @Override
                             public void onClick(View textView) {
                                 Log.d("click", cmpny);
+
                                 DetailFragment fragment = DetailFragment.newInstance(cmpny);
                                 FragmentManager fragmentManager = getParentFragmentManager(); // or getFragmentManager() in older APIs or within a Fragment
                                 FragmentTransaction transaction = fragmentManager.beginTransaction();
                                 transaction.replace(R.id.homePage, fragment); // 'fragment_container' is the ID of your container in the layout
                                 transaction.commit();
+
+
 
                             }
                         };
@@ -157,6 +164,25 @@ public class DetailFragment extends Fragment {
         fragment.setArguments(args);
         return fragment;
     }
+
+//    @Override
+//    public void onAttach(@NonNull Context context) {
+//        super.onAttach(context);
+//        // Ensure the context is an instance of MainActivity
+//        if (context instanceof MainActivity) {
+//            ((MainActivity) context).updateACTView(sts);
+//        } else {
+//            throw new RuntimeException(context.toString() + " must be MainActivity");
+//        }
+//    }
+        @Override
+        public void onActivityCreated(@Nullable Bundle savedInstanceState) {
+            super.onActivityCreated(savedInstanceState);
+            if (getActivity() instanceof MainActivity) {
+                ((MainActivity) getActivity()).updateACTView(sts);
+            }
+        }
+
 
 
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
@@ -912,6 +938,7 @@ public class DetailFragment extends Fragment {
                 error -> {
                     Log.e("getCostValues", "Error: " + error.toString());
                 });
+
         requestQueue.add(jsonObjectRequest);
     }
 

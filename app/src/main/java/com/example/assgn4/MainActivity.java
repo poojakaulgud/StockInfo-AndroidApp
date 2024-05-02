@@ -28,8 +28,6 @@ import android.util.Log;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentTransaction;
-import androidx.navigation.NavController;
-import androidx.navigation.Navigation;
 import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
@@ -402,6 +400,16 @@ public class MainActivity extends AppCompatActivity implements FavoritesAdapter.
 
 
 
+    }
+
+    public void updateACTView(String ticker) {
+        TextView tickerTextView = findViewById(R.id.tickerTextView);
+        tickerTextView.setText(ticker);
+        d_symbol = ticker;
+        Log.d("my ticker", ticker);
+        if(ticker.equals("QCOM")){
+            d_desc = "Qualcomm Inc";
+        }
     }
 
     private void deleteFavorite(String ticker, Callback callback){
