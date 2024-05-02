@@ -54,7 +54,7 @@
 
             if(ohlc.length > 0 && volume.length > 0){
               console.log('calling func', JSON.stringify(main_chart_data, null, 2));
-            callMainChart(main_chart_data);
+            callMainChart(main_chart_data, ticker);
             }
           }
 
