@@ -7,10 +7,10 @@
     android:padding="16dp">
 
     <!-- Add your UI elements here for the first tab -->
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Content for the first tab" />
+    <WebView
+        android:id="@+id/price_webview"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"/>
 </LinearLayout>
 
     <!-- Do similarly for the second and other tabs -->

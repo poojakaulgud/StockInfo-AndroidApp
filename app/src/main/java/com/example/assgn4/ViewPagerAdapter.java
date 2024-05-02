@@ -6,19 +6,20 @@ import androidx.fragment.app.Fragment;
 
 
 public class ViewPagerAdapter extends FragmentStateAdapter {
-    // Constructor and other methods...
+    String ticker;
 
-    public ViewPagerAdapter(@NonNull DetailFragment fragmentActivity) {
+    public ViewPagerAdapter(@NonNull DetailFragment fragmentActivity, String ticker) {
         super(fragmentActivity);
+        this.ticker = ticker;
     }
 
     @Override
     public Fragment createFragment(int position) {
         switch (position) {
             case 0:
-                return new FirstTabFragment();
+                return new FirstTabFragment(ticker);
             case 1:
-                return new SecondTabFragment();
+                return new SecondTabFragment(ticker);
             default:
                 throw new IllegalStateException("Unexpected position: " + position);
         }

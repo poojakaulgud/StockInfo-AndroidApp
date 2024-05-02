@@ -458,7 +458,7 @@ public class DetailFragment extends Fragment {
         TabLayout tabLayout = view.findViewById(R.id.tabs);
 
         // Create an instance of the ViewPagerAdapter
-        ViewPagerAdapter adapter = new ViewPagerAdapter(this);
+        ViewPagerAdapter adapter = new ViewPagerAdapter(this, sts);
 
         // Set the adapter on the ViewPager2
         viewPager.setAdapter(adapter);
